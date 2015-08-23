@@ -1,0 +1,7 @@
+0.1		-initial version
+		-added GUI system
+0.2		-added language packages for fast translation
+0.3		-added installer instructions file (for build.exe)
+		-added "complete setup" step to GUI system
+		-translated to german
+0.4		currently working...
