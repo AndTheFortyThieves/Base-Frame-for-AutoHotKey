@@ -7,10 +7,10 @@
 	Gui, Add, Text, x10 y60, % lang("Application name")
 	Gui, Add, Edit, x10 y80 w180 vAppName
 	Gui, Add, GroupBox, x10 y110 w230 h283, 
-	Gui, Add, Text, x15 y130, % lang("Abbreviation") ":"
-	Gui, Add, Edit, x105 yp vAppNameShort,
-	Gui, Add, Text, x15 yp+25, % lang("Long name") ":"
-	Gui, Add, Edit, x105 yp vAppNameLong,
+	;	Gui, Add, Text, x15 y130, % lang("Abbreviation") ":"		| REMOVE BEFORE RELEASING
+	;	Gui, Add, Edit, x105 yp vAppNameShort,						| NEXT VERSION!
+	;	Gui, Add, Text, x15 yp+25, % lang("Long name") ":"			|
+	;	Gui, Add, Edit, x105 yp vAppNameLong,						| (add webpage field!)
 	Gui, Add, Text, x15 yp+25, % lang("Installation folder") ":"
 	Gui, Add, Edit, x105 yp vAppFolder,
 	Gui, Add, Text, x15 yp+30, % lang("Author") ":"
