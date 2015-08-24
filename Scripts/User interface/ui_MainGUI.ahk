@@ -11,6 +11,7 @@
 	;	Gui, Add, Edit, x105 yp vAppNameShort,						| NEXT VERSION!
 	;	Gui, Add, Text, x15 yp+25, % lang("Long name") ":"			|
 	;	Gui, Add, Edit, x105 yp vAppNameLong,						| (add webpage field!)
+	AppNameShort := "cancelled", AppNameLong := "cancelled"
 	Gui, Add, Text, x15 yp+25, % lang("Installation folder") ":"
 	Gui, Add, Edit, x105 yp vAppFolder,
 	Gui, Add, Text, x15 yp+30, % lang("Author") ":"
@@ -590,7 +591,9 @@ else
 If not (Source = "" or AppName = "" or AppNameShort = "" or AppNameLong = "" or AppFolder = "" or AppAuthorName = "" or AppAuthorEmail = "" or AppVersion = "" or AppVersionForComparison = "" or AppURLVersionComparison = "")
    GuiControl, Enable, ButtonGenerateExe
 else
-   GuiControl, Disable, ButtonGenerateExe
+	GuiControl, Enable, ButtonGenerateExe
+   ;GuiControl, Disable, ButtonGenerateExe
+   ;changed for testing purpose
 Return
 
 

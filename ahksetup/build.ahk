@@ -66,7 +66,7 @@ if(!source or !license)
 {
 	FileAppend, % "`n`nSYNTAX:`nbuild [Source] [-li License | -gnu_gpl] [-d Dest] [-lang Language] [-s]`n`n", CONOUT$
 	FileAppend, % "    [Source]`n", CONOUT$
-	FileAppend, % "       Can be any executable.`n`n", CONOUT$
+	FileAppend, % "       Can be any executable. Source folder must contain appinfo`.ini`n`n", CONOUT$
 	FileAppend, % "    [-li License | -gnu_gpl]`n", CONOUT$
 	FileAppend, % "       LicenseFile: Can be any txt file holding the license text.`n", CONOUT$
 	FileAppend, % "       -gnu_gpl:    Use standard GNU General Public License v3`n`n", CONOUT$
@@ -80,30 +80,36 @@ if(!source or !license)
 	gosub, Exit
 }
 
+SplitPath, source,, source_dir
 
-FileAppend, `n, CONOUT$
-FileAppend, starting...`n, CONOUT$
+FileDelete, log.txt
+
+console_log("`n")
+console_log("starting...`n")
+if !FileExist(source_dir . "\appinfo.ini"){
+	console_log("ERROR: Couldn't find " . source_dir . "\appinfo.ini")
+}
 if(gnu_gpl){
-	FileAppend, % "license: GNU General Public License v3`n", CONOUT$
-	FileAppend, % "         language: " . language . "`n", CONOUT$
+	console_log("license: GNU General Public License v3`n")
+	console_log("         language: " . language . "`n")
 	if(!FileExist(A_Temp . "\gnu_gpl_" . language . ".txt")){
-		FileAppend, % "WARNING: GNU GPL not available in language " . language . "`n", CONOUT$
-		FileAppend, % "         (check www.gnu.org/licenses/translations.html and download manually)`n", CONOUT$
-		FileAppend, % "         GNU GPL language set to default (EN)`n", CONOUT$
+		console_log("WARNING: GNU GPL not available in language " . language . "`n")
+		console_log("         (check www.gnu.org/licenses/translations.html and download manually)`n")
+		console_log("         GNU GPL language set to default (EN)`n")
 		language := "EN"
 	}
 	license := A_Temp . "\gnu_gpl_" . language . "`.txt"
 	FileRead, license_content, %license%
 }
 if(!FileExist(source)){
-	FileAppend, ERROR: source file does not exist!`n, CONOUT$
+	console_log("ERROR: source file does not exist!`n")
 	gosub, Exit
 }
 if(!FileExist(license)){
-	FileAppend, ERROR: license file does not exist!`n, CONOUT$
+	console_log("ERROR: license file does not exist!`n")
 	gosub, Exit
 }
-FileAppend, creating environment, writing instruction file 1/2...`n, CONOUT$
+console_log("creating environment`, writing instruction file 1/2...`n")
 FileRemoveDir, build, 1
 FileCreateDir, build
 instructions := "Gui`,Submit`,NoHide`n"
@@ -112,52 +118,51 @@ qm="
 FileDelete, instructions
 FileDelete, license.txt
 if(single) {
-	FileAppend, single mode`n, CONOUT$
+	console_log("single mode`n")
 } else {
-	SplitPath, source,, source_dir
 	rel_pos := StrLen(source_dir) + 2
-	FileAppend, copying directory structure from %source_dir%:`n, CONOUT$
+	console_log("copying directory structure from " . source_dir . ":`n")
 	Loop, Files, %source_dir%\*.*, DR
 	{
 		rel_path := SubStr(A_LoopFileFullPath, rel_pos)
-		FileAppend, %instr_amount_counter%: %rel_path% - , CONOUT$
-		FileAppend, % " create dir..." , CONOUT$
+		console_log(instr_amount_counter . ": " . rel_path . " - ")
+		console_log(" create dir...")
 		FileCreateDir, build\%rel_path%
-		FileAppend, % " write instr...`n" , CONOUT$
+		console_log(" write instr...`n")
 		instructions .= "log(label11 `. " . qm . "\" . rel_path  . qm . ")`nFileCreateDir`, `% label11 `. " . qm . "\" . rel_path  . qm . "`ninstr_count++`nprogress := floor(100*(instr_count/instr_amount))`nGuiControl,, label14, `% progress`nGuiControl,, label15, `%progress`% ```%`n"
 		instr_amount_counter ++
 	}
-	FileAppend, copying resources from %source_dir%:`n, CONOUT$
+	console_log("copying resources from " . source_dir . ":`n")
 	Loop, Files, %source_dir%\*.*, FR
 	{
 		rel_path := SubStr(A_LoopFileFullPath, rel_pos)
-		FileAppend, %instr_amount_counter%: %rel_path% -, CONOUT$
-		FileAppend, % " copy file..." , CONOUT$
+		console_log(instr_amount_counter . ": " . rel_path . " -")
+		console_log(" copy file...")
 		FileCopy, %A_LoopFileFullPath%, build\%rel_path%
-		FileAppend, % " write instr...`n" , CONOUT$
+		console_log(" write instr...`n")
 		instructions .= "log(label11 `. " . qm . "\" . rel_path  . qm . ")`nFileInstall`," . rel_path . "`, `% label11 `. " . qm . "\" . rel_path  . qm . ",1`ninstr_count++`nprogress := floor(100*(instr_count/instr_amount))`nGuiControl,, label14, `% progress`nGuiControl,, label15, `%progress`% ```%`n"
 		instr_amount_counter ++
 	}
 }
-FileAppend, writing instruction file 2/2...`n, CONOUT$
+console_log("writing instruction file 2/2...`n")
 
 instructions := "instr_count := 0`ninstr_amount := " instr_amount_counter . "`n" . instructions
-FileAppend, instruction output:`n%instructions%`n, CONOUT$
-FileAppend, processing:`n, CONOUT$
-FileAppend, adding setup_template...`n, CONOUT$
+console_log("----- instruction output -----`n" . instructions . "------------------------------`n")
+console_log("processing:`n")
+console_log("adding setup_template...`n")
 uniquename := A_TickCount
 while (FileExist("build\" . uniquename . "`.ahk")){
 	uniquename .= 0
 }
 template_file := "build\" . uniquename . "`.ahk"
 FileCopy, setup_template.ahk, % template_file
-FileAppend, instructions to file...`n, CONOUT$
+console_log("instructions to file...`n")
 FileAppend, % instructions, instructions
-FileAppend, license to file...`n, CONOUT$
+console_log("license to file...`n")
 FileAppend, % license_content, license.txt
 /*
 
-FileAppend, processing: '%source%'...`n, CONOUT$
+console_log("processing: '" . source . "'...`n")
 FileDelete, instructions
 FileAppend, % "GuiControl,, label14, `% 0`n", instructions
 FileAppend, % "GuiControl,, label15, `% A_Index . " . qm . "```%" . qm . "`n", instructions
@@ -167,9 +172,14 @@ FileAppend, % "log(label11 . " . qm . "\" . source . qm . ")`n`n", instructions
 */
 
 
-FileAppend, `nbuild completed, CONOUT$
+console_log("`nbuild completed")
 
 Exit:
-FileAppend, `n---`nbuild.exe is terminated`n, CONOUT$
-Send, {Enter}
+console_log("`n---`nbuild.exe is terminated`n")
 ExitApp
+
+
+console_log(text){
+	FileAppend, % text, CONOUT$
+	FileAppend, % text, log.txt
+}
