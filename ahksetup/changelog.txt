@@ -4,4 +4,8 @@
 0.3		-added installer instructions file (for build.exe)
 		-added "complete setup" step to GUI system
 		-translated to german
-0.4		currently working...
+0.4		-added logfile
+		-added obligatory appinfo.ini
+		-changed setup icon
+		-added "test start.ahk" for demonstrating purpose
+		-added a Testsuite with a dummy program
