@@ -9,3 +9,13 @@
 		-changed setup icon
 		-added "test start.ahk" for demonstrating purpose
 		-added a Testsuite with a dummy program
+0.5		-finished build.exe to use appinfo.ini as planned
+		-changed gnu_gpl files to contain templates
+		-extended language packages to current needs
+		-using .ico instead of .jpg icons
+		-changed build.exe to generate setup template initialization routine dynamically
+		-added some new features to setup template: Show licenses full text, open app website, show current file which is being extracted.
+		-setup template now shows icon of own executable file as setup icon
+		-new example with current features demonstrated in teststart.ahk
+		-expanded appinfo with information for new features
+		-added a custom setup icon to the example program

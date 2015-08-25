@@ -1,4 +1,4 @@
-﻿#NoEnv  ; Recommended for performance and compatibility with future AutoHotkey releases.
+#NoEnv  ; Recommended for performance and compatibility with future AutoHotkey releases.
 ; #Warn  ; Enable warnings to assist with detecting common errors.
 SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
@@ -10,10 +10,11 @@ If(!DllCall("AttachConsole", "int", -1)){
 	ExitApp
 }
 
-
+SplitPath, A_AhkPath,, AhkRoot
 next_param := "source"
 single := 0
 gnu_gpl := 0
+destination := ""
 language := "EN"
 
 param1=%1%
@@ -21,7 +22,10 @@ param2=%2%
 param3=%3%
 param4=%4%
 param5=%5%
-Loop, 5
+param6=%6%
+param7=%7%
+param8=%8%
+Loop, 8
 {
 	tmp := param%A_Index%
 	if(tmp == "")
@@ -88,7 +92,38 @@ console_log("`n")
 console_log("starting...`n")
 if !FileExist(source_dir . "\appinfo.ini"){
 	console_log("ERROR: Couldn't find " . source_dir . "\appinfo.ini")
+	gosub, Exit
+} else {
+	IniRead, AppName, % source_dir . "\appinfo.ini", AppInfo, AppName, % A_Space
+	IniRead, AppVersion, % source_dir . "\appinfo.ini", AppInfo, AppVersion, % A_Space
+	IniRead, AppUpdateVersion, % source_dir . "\appinfo.ini", AppInfo, AppUpdateVersion, % A_Space
+	IniRead, AppAuthorName, % source_dir . "\appinfo.ini", AppInfo, AppAuthorName, % A_Space
+	IniRead, AppAuthorEmail, % source_dir . "\appinfo.ini", AppInfo, AppAuthorEmail, % A_Space
+	IniRead, AppChangelog, % source_dir . "\appinfo.ini", AppInfo, AppChangelog, % A_Space
+	IniRead, AppStdInstall, % source_dir . "\appinfo.ini", AppInfo, AppStdInstall, % AppName
+	IniRead, AppWebsite, % source_dir . "\appinfo.ini", AppInfo, AppWebsite, % A_Space
+	IniRead, AppIcon, % source_dir . "\appinfo.ini", AppInfo, AppIcon, %A_WorkingDir%\setupicon.ico
+	AppInfoIncomplete := (!AppName or !AppVersion or !AppUpdateVersion or !AppAuthorName or !AppAuthorEmail)
+	if AppInfoIncomplete {
+		console_log("ERROR: Incomplete appinfo.ini!")
+		gosub, Exit
+	}
+	AppChangelogAvailable := !(!AppChangelog)
+	AppWebsiteAvailable := !(!AppWebsite)
 }
+console_log("Application Info:`n")
+console_log("AppName=" . AppName . "`n")
+console_log("AppVersion=" . AppVersion . "`n")
+console_log("AppUpdateVersion=" . AppUpdateVersion . "`n")
+console_log("AppAuthorName=" . AppAuthorName . "`n")
+console_log("AppAuthorEmail=" . AppAuthorEmail . "`n")
+console_log("AppStdInstall=" . AppAuthorEmail . "`n")
+console_log("AppChangelogAvailable=" . AppChangelogAvailable . "`n")
+if AppChangelogAvailable
+	console_log("AppChangelog=" . AppChangelog . "`n")
+console_log("AppWebsiteAvailable=" . AppWebsiteAvailable . "`n")
+if AppWebsiteAvailable
+	console_log("AppWebsite=" . AppWebsite . "`n")
 if(gnu_gpl){
 	console_log("license: GNU General Public License v3`n")
 	console_log("         language: " . language . "`n")
@@ -99,7 +134,6 @@ if(gnu_gpl){
 		language := "EN"
 	}
 	license := A_Temp . "\gnu_gpl_" . language . "`.txt"
-	FileRead, license_content, %license%
 }
 if(!FileExist(source)){
 	console_log("ERROR: source file does not exist!`n")
@@ -108,6 +142,18 @@ if(!FileExist(source)){
 if(!FileExist(license)){
 	console_log("ERROR: license file does not exist!`n")
 	gosub, Exit
+}
+FileRead, license_content, %license%
+if(!FileExist(AppIcon) or (AppIcon == "setupicon.ico")){
+	AppIcon := source_dir . "\" . AppIcon
+	if(!FileExist(AppIcon)){
+		console_log("ERROR: specified icon file does not exist!`n")
+		gosub, Exit
+	}
+}
+if(destination == ""){
+	destination := source_dir . "\" . AppName . " Setup.exe"
+	console_log("Using standard destination.`n")
 }
 console_log("creating environment`, writing instruction file 1/2...`n")
 FileRemoveDir, build, 1
@@ -146,6 +192,7 @@ if(single) {
 }
 console_log("writing instruction file 2/2...`n")
 
+
 instructions := "instr_count := 0`ninstr_amount := " instr_amount_counter . "`n" . instructions
 console_log("----- instruction output -----`n" . instructions . "------------------------------`n")
 console_log("processing:`n")
@@ -155,26 +202,44 @@ while (FileExist("build\" . uniquename . "`.ahk")){
 	uniquename .= 0
 }
 template_file := "build\" . uniquename . "`.ahk"
-FileCopy, setup_template.ahk, % template_file
+
+FileAppend, RunAsAdmin()`n, % template_file
+FileAppend, #Include ../lang_packages/%language%.lp`n, % template_file
+FileAppend, CONST_SETUP_TITLE := "%AppName% %AppVersion%"`n, % template_file
+FileAppend, CONST_SETUP_STD_FOLDER := "%AppStdInstall%"`n, % template_file
+FileAppend, CONST_SETUP_APPWEBSITE := "%AppWebsite%"`n, % template_file
+FileAppend, CONST_SETUP_APPWEBSITEAVAILABLE := %AppWebsiteAvailable%`n, % template_file
+FileRead, template_content, setup_template.ahk
+FileAppend, % template_content, % template_file
+
+
 console_log("instructions to file...`n")
 FileAppend, % instructions, instructions
 console_log("license to file...`n")
+
+keywords := "AppName|AppVersion|AppUpdateVersion|AppAuthorName|AppAuthorEmail"
+Loop, Parse, keywords, |
+StringReplace, license_content, license_content, % "%" . A_LoopField . "%", % %A_LoopField%, 1
 FileAppend, % license_content, license.txt
-/*
 
-console_log("processing: '" . source . "'...`n")
-FileDelete, instructions
-FileAppend, % "GuiControl,, label14, `% 0`n", instructions
-FileAppend, % "GuiControl,, label15, `% A_Index . " . qm . "```%" . qm . "`n", instructions
-FileAppend, % "Gui, Submit, NoHide`n", instructions
-FileAppend, % "log(label11 . " . qm . "\" . source . qm . ")`n`n", instructions
+console_log("compiling setup executable... ")
 
-*/
+RunWait, %AhkRoot%\Compiler\Ahk2Exe.exe /in "%A_WorkingDir%\build\%uniquename%.ahk" /out "%destination%" /icon "%AppIcon%"
 
+console_log("(" . errorlevel . ")`n")
+CompilingError := (errorlevel != 0)
+if (CompilingError) {
+	console_log("ERROR occured while compiling. See error message for further information.")
+	gosub, Exit
+}
 
-console_log("`nbuild completed")
+console_log("build completed! Setup file saved as: " . destination)
 
 Exit:
+console_log("`nremoving temporary files...")
+FileDelete, instructions
+FileDelete, license.txt
+FileRemoveDir, build, 1
 console_log("`n---`nbuild.exe is terminated`n")
 ExitApp
 
