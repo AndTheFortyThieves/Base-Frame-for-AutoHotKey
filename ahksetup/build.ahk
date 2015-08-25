@@ -84,7 +84,7 @@ if(!source or !license)
 	gosub, Exit
 }
 
-SplitPath, source,, source_dir
+SplitPath, source, source_exe, source_dir
 
 FileDelete, log.txt
 
@@ -192,6 +192,23 @@ if(single) {
 }
 console_log("writing instruction file 2/2...`n")
 
+instr_amount_counter ++
+instructions .= "log(" . qm . "Registry..." . qm . ")`n"
+instructions .= "AppKey := " . qm . "SOFTWARE\" . AppName . qm . "`n"
+instructions .= "UninstallKey := " . qm . "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\" . AppName . qm . "`n"
+instructions .= "AppPathKey := " . qm . "SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\" . source_exe . qm . "`n"
+instructions .= "SetRegView `% (A_Is64bitOS ? 64 : 32)`n"
+instructions .= "RegWrite REG_SZ, HKLM, `%AppKey`%, InstallDir, `%label11`%`n"
+instructions .= "RegWrite REG_SZ, HKLM, `%AppKey`%, Version, `%CONST_SETUP_APPVERSION`%`n"
+instructions .= "RegWrite REG_SZ, HKLM, `%UninstallKey`%, DisplayName, `%CONST_SETUP_TITLE`%`n"
+instructions .= "RegWrite REG_SZ, HKLM, `%UninstallKey`%, UninstallString, " . qm . "`%label11`%\Uninstall.exe" . qm . "`n"
+instructions .= "RegWrite REG_SZ, HKLM, `%UninstallKey`%, DisplayIcon, " . qm . "`%label11`%\" . source_exe . qm . "`n"
+instructions .= "RegWrite REG_SZ, HKLM, `%UninstallKey`%, DisplayVersion, `%CONST_SETUP_APPVERSION`%`n"
+instructions .= "RegWrite REG_SZ, HKLM, `%UninstallKey`%, URLInfoAbout, `%CONST_SETUP_APPWEBSITE`%`n"
+instructions .= "RegWrite REG_SZ, HKLM, `%UninstallKey`%, Publisher, `%CONST_SETUP_APPAUTHORNAME`%`n"
+instructions .= "RegWrite REG_SZ, HKLM, `%UninstallKey`%, NoModify, 1`n"
+instructions .= "RegWrite REG_SZ, HKLM, `%AppPathKey`%,, `%label11`%\" . source_exe . "`n"
+instructions .= "instr_count++`nprogress := floor(100*(instr_count/instr_amount))`nGuiControl,, label14, `% progress`nGuiControl,, label15, `%progress`% ```%`n"
 
 instructions := "instr_count := 0`ninstr_amount := " instr_amount_counter . "`n" . instructions
 console_log("----- instruction output -----`n" . instructions . "------------------------------`n")
@@ -206,8 +223,12 @@ template_file := "build\" . uniquename . "`.ahk"
 FileAppend, RunAsAdmin()`n, % template_file
 FileAppend, #Include ../lang_packages/%language%.lp`n, % template_file
 FileAppend, CONST_SETUP_TITLE := "%AppName% %AppVersion%"`n, % template_file
+FileAppend, CONST_SETUP_APPNAME := "%AppName%"`n, % template_file
+FileAppend, CONST_SETUP_APPEXE := "%source_exe%"`n, % template_file
+FileAppend, CONST_SETUP_APPVERSION := "%AppVersion%"`n, % template_file
 FileAppend, CONST_SETUP_STD_FOLDER := "%AppStdInstall%"`n, % template_file
 FileAppend, CONST_SETUP_APPWEBSITE := "%AppWebsite%"`n, % template_file
+FileAppend, CONST_SETUP_APPAUTHORNAME := "%AppAuthorName%"`n, % template_file
 FileAppend, CONST_SETUP_APPWEBSITEAVAILABLE := %AppWebsiteAvailable%`n, % template_file
 FileRead, template_content, setup_template.ahk
 FileAppend, % template_content, % template_file

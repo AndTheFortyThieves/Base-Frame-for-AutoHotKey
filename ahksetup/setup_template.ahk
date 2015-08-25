@@ -1,10 +1,9 @@
 
 ;===INITIALIZATION END===
 ;lines above are inserted by builder
-#NoEnv  ; Recommended for performance and compatibility with future AutoHotkey releases.
-; #Warn  ; Enable warnings to assist with detecting common errors.
-SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
-SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
+#NoEnv
+#SingleInstance Ignore
+SetWorkingDir %A_ScriptDir%
 
 MAIN_INSTALLATION_FINISHED := 0
 MAIN_SITE := 0
@@ -137,7 +136,17 @@ if(MAIN_SITE = 5){
 	MAIN_INSTALLATION_FINISHED := 1
 }
 if(MAIN_SITE = 6){
-	gosub, GuiClose
+	Gui, Submit, NoHide
+	;19 - Desktop
+	;20 - Start Menu
+	;21 - Run
+	if(label19)
+		FileCreateShortcut, %label11%\%CONST_SETUP_APPEXE%, %A_Desktop%\%CONST_SETUP_APPNAME%.lnk, %label11%, % "", % CONST_SETUP_APPNAME . " " . CONST_SETUP_APPVERSION
+	if(label20)
+		FileCreateShortcut, %label11%\%CONST_SETUP_APPEXE%, %A_Startmenu%\%CONST_SETUP_APPNAME%.lnk, %label11%, % "", % CONST_SETUP_APPNAME . " " . CONST_SETUP_APPVERSION
+	if(label21)
+		Run, %label11%\%CONST_SETUP_APPEXE%, %label11%
+	ExitApp
 }
 Return
 
@@ -178,9 +187,6 @@ log(message){
 	GuiControl, Text, label23, % rel_path
 	Return
 }
-
-^X::
-ExitApp
 
 
 

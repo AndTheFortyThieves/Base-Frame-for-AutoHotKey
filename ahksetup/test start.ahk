@@ -4,7 +4,7 @@
 ;build [Source] [-li License | -gnu_gpl] [-d Dest] [-lang Language] [-s]
 
 q="
-build_source := "Testsuite\Example Program\start.ahk"
+build_source := "Testsuite\Example Program\start.exe"
 build_license := "-gnu_gpl"
 build_dest := "Testsuite\Destination\ep_setup.exe"
 build_lang := "DE"
