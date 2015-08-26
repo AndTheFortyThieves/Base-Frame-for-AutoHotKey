@@ -190,6 +190,12 @@ if(single) {
 		instr_amount_counter ++
 	}
 }
+rel_path := "Uninstall.exe"
+console_log(instr_amount_counter . ": (obligatory) " . rel_path . " -")
+console_log(" write instr...`n")
+instructions .= "log(label11 `. " . qm . "\" . rel_path  . qm . ")`nFileInstall`," . rel_path . "`, `% label11 `. " . qm . "\" . rel_path  . qm . ",1`ninstr_count++`nprogress := floor(100*(instr_count/instr_amount))`nGuiControl,, label14, `% progress`nGuiControl,, label15, `%progress`% ```%`n"
+instr_amount_counter ++
+
 console_log("writing instruction file 2/2...`n")
 
 instr_amount_counter ++
@@ -233,7 +239,6 @@ FileAppend, CONST_SETUP_APPWEBSITEAVAILABLE := %AppWebsiteAvailable%`n, % templa
 FileRead, template_content, setup_template.ahk
 FileAppend, % template_content, % template_file
 
-
 console_log("instructions to file...`n")
 FileAppend, % instructions, instructions
 console_log("license to file...`n")
@@ -243,7 +248,33 @@ Loop, Parse, keywords, |
 StringReplace, license_content, license_content, % "%" . A_LoopField . "%", % %A_LoopField%, 1
 FileAppend, % license_content, license.txt
 
-console_log("compiling setup executable... ")
+
+console_log("adding uninstaller:`n")
+console_log("generating Uninstall.exe from template...`n")
+
+uniqueuninst := A_TickCount
+while (FileExist("build\" . uniqueuninst . "`.ahk") or FileExist("build\" . uniqueuninst . "`.exe")){
+	uniqueuninst .= 0
+}
+template_file := "build\" . uniqueuninst . "`.ahk"
+FileAppend, RunAsAdmin()`n, % template_file
+FileAppend, #Include ../lang_packages/%language%.lp`n, % template_file
+FileAppend, CONST_SETUP_TITLE := "%AppName% %AppVersion%"`n, % template_file
+FileAppend, CONST_SETUP_APPNAME := "%AppName%"`n, % template_file
+FileAppend, CONST_SETUP_APPEXE := "%source_exe%"`n, % template_file
+FileRead, template_content, uninstall_template.ahk
+FileAppend, % template_content, % template_file
+
+console_log("compiling uninstaller...`n")
+RunWait, %AhkRoot%\Compiler\Ahk2Exe.exe /in "%A_WorkingDir%\build\%uniqueuninst%.ahk" /out "%A_WorkingDir%\build\%uniqueuninst%.exe" /icon "%AppIcon%"
+
+console_log("adding uninstall starter...`n")
+FileRead, template_content, uninst_start.ahk
+StringReplace, template_content, template_content, #uninstaller#, %uniqueuninst%.exe
+FileAppend, % template_content, build/Uninstall.ahk
+RunWait, %AhkRoot%\Compiler\Ahk2Exe.exe /in "%A_WorkingDir%\build\Uninstall.ahk" /out "%A_WorkingDir%\build\Uninstall.exe" /icon "%AppIcon%"
+
+console_log("compiling setup... ")
 
 RunWait, %AhkRoot%\Compiler\Ahk2Exe.exe /in "%A_WorkingDir%\build\%uniquename%.ahk" /out "%destination%" /icon "%AppIcon%"
 

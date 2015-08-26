@@ -18,7 +18,7 @@ Gui, Add, Text, x77 y6, % CONST_SETUP_TITLE . "`n" . LANG_INSTALLATION
 Gui, Add, Progress, cD4D0C8 x0 y57 h1 w500 +Border, 100
 Gui, Add, Progress, cF0F0F0 x0 y252 h1 w500 +Border, 100
 Gui, Font, s10 c888888, Segoe UI
-Gui, Add, Text, x5 y282 gAbout, ahksetup 0.5
+Gui, Add, Text, x5 y282 gAbout, ahksetup 1.0
 Gui, Font, s8 c000000, Segoe UI
 
 ;text + button initialization

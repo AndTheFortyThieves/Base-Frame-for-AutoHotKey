@@ -19,3 +19,8 @@
 		-new example with current features demonstrated in teststart.ahk
 		-expanded appinfo with information for new features
 		-added a custom setup icon to the example program
+0.6		-Installer finished! (extracting files, writing registry, creatingshortcuts) -> changes in "build" and "setup template"
+		-ep_setup.exe as example for generated fully functional setup
+1.0		-added integrated uninstaller, consisting from the unistall starter and the uninstaller
+		-added uninstaller template + uninst_start template
+		-generated a new example setup, that will automatically extract a fully functioning uninstaller besides the example program
