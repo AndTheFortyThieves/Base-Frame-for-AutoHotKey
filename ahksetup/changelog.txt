@@ -27,3 +27,9 @@
 1.1		-automatic escaping of filenames for fileinstall
 		-fixed Ahk2Exe Error for empty files bug
 		-added ToDo list, goals for v2.0
+1.2		- time optimization by copying whole source directory and only writing instructions one by one
+		- startmenu link is now in a folder together with uninstall link
+		- fixed uninstall bug that occured when uninstall was launched via the startmenu link
+		- registry entry "NoModify" REG_DWORD instead of REG_SZ
+		- added AppID as unique application identifier (keeping registry consistent when programs display name changes)
+		- made AppAuthorEmail optional

@@ -1,6 +1,5 @@
 #NoEnv  ; Recommended for performance and compatibility with future AutoHotkey releases.
-; #Warn  ; Enable warnings to assist with detecting common errors.
-SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
+SetBatchLines, -1
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
 FileInstall, gnu_gpl_EN.txt, % A_Temp . "\gnu_gpl_EN.txt", 1
@@ -84,6 +83,20 @@ if(!source or !license)
 	gosub, Exit
 }
 
+;collecting language specific data
+lp_section := 1
+Loop, Read, lang_packages/%language%.lp
+{
+	if (A_LoopReadLine == "`;SECTION END")
+	{
+		lp_section++
+		continue
+	}
+	if (lp_section == 3) {
+		lp_entry := StrSplit(A_LoopReadLine, "="), lp_varname := lp_entry[1], %lp_varname% := lp_entry[2]
+	}
+}
+
 SplitPath, source, source_exe, source_dir
 
 FileDelete, log.txt
@@ -95,29 +108,38 @@ if !FileExist(source_dir . "\appinfo.ini"){
 	gosub, Exit
 } else {
 	IniRead, AppName, % source_dir . "\appinfo.ini", AppInfo, AppName, % A_Space
+	IniRead, AppID, % source_dir . "\appinfo.ini", AppInfo, AppID, % AppName
 	IniRead, AppVersion, % source_dir . "\appinfo.ini", AppInfo, AppVersion, % A_Space
 	IniRead, AppUpdateVersion, % source_dir . "\appinfo.ini", AppInfo, AppUpdateVersion, % A_Space
 	IniRead, AppAuthorName, % source_dir . "\appinfo.ini", AppInfo, AppAuthorName, % A_Space
 	IniRead, AppAuthorEmail, % source_dir . "\appinfo.ini", AppInfo, AppAuthorEmail, % A_Space
 	IniRead, AppChangelog, % source_dir . "\appinfo.ini", AppInfo, AppChangelog, % A_Space
 	IniRead, AppStdInstall, % source_dir . "\appinfo.ini", AppInfo, AppStdInstall, % AppName
+	IniRead, AppStartMenu, % source_dir . "\appinfo.ini", AppInfo, AppStartMenu, % AppName
 	IniRead, AppWebsite, % source_dir . "\appinfo.ini", AppInfo, AppWebsite, % A_Space
 	IniRead, AppIcon, % source_dir . "\appinfo.ini", AppInfo, AppIcon, %A_WorkingDir%\setupicon.ico
-	AppInfoIncomplete := (!AppName or !AppVersion or !AppUpdateVersion or !AppAuthorName or !AppAuthorEmail)
+	AppInfoIncomplete := (!AppName or !AppVersion or !AppUpdateVersion or !AppAuthorName)
 	if AppInfoIncomplete {
 		console_log("ERROR: Incomplete appinfo.ini!")
 		gosub, Exit
 	}
 	AppChangelogAvailable := !(!AppChangelog)
 	AppWebsiteAvailable := !(!AppWebsite)
+	AppAuthorEmailAvailable := !(!AppAuthorEmail)
 }
 console_log("Application Info:`n")
 console_log("AppName=" . AppName . "`n")
+console_log("AppID=" . AppID . "`n")
 console_log("AppVersion=" . AppVersion . "`n")
 console_log("AppUpdateVersion=" . AppUpdateVersion . "`n")
 console_log("AppAuthorName=" . AppAuthorName . "`n")
-console_log("AppAuthorEmail=" . AppAuthorEmail . "`n")
-console_log("AppStdInstall=" . AppAuthorEmail . "`n")
+console_log("AppAuthorEmailAvailable=" . AppAuthorEmailAvailable . "`n")
+if AppAuthorEmailAvailable
+	console_log("AppAuthorEmail=" . AppAuthorEmail . "`n")
+else
+	AppAuthorEmail := BUILD_LANG_UNAIVAILABLE
+console_log("AppStdInstall=" . AppStdInstall . "`n")
+console_log("AppStartMenu=" . AppStartMenu . "`n")
 console_log("AppChangelogAvailable=" . AppChangelogAvailable . "`n")
 if AppChangelogAvailable
 	console_log("AppChangelog=" . AppChangelog . "`n")
@@ -151,13 +173,19 @@ if(!FileExist(AppIcon) or (AppIcon == "setupicon.ico")){
 		gosub, Exit
 	}
 }
+if(SubStr(AppIcon, -3) == ".exe"){
+	console_log("Using icon from executable.`n")
+}
 if(destination == ""){
 	destination := source_dir . "\" . AppName . " Setup.exe"
 	console_log("Using standard destination.`n")
 }
-console_log("creating environment`, writing instruction file 1/2...`n")
+console_log("creating environment:`ncopying files...`n")
 FileRemoveDir, build, 1
 FileCreateDir, build
+FileCopyDir, % source_dir, build, 1
+IniWrite, %AppID%, build/appinfo.ini, AppInfo, AppID
+console_log("writing instruction file 1/2...`n")
 instructions := "Gui`,Submit`,NoHide`n"
 instr_amount_counter := 0
 qm="
@@ -167,38 +195,30 @@ if(single) {
 	console_log("single mode`n")
 } else {
 	rel_pos := StrLen(source_dir) + 2
-	console_log("copying directory structure from " . source_dir . ":`n")
+	console_log("generating instructions from directory structure of " . source_dir . ":`n")
 	Loop, Files, %source_dir%\*.*, DR
 	{
 		rel_path := SubStr(A_LoopFileFullPath, rel_pos)
-		console_log(instr_amount_counter . ": " . rel_path . " - ")
-		console_log(" create dir...")
-		FileCreateDir, build\%rel_path%
-		console_log(" write instr...`n")
+		console_log(instr_amount_counter . ": " . rel_path . "`n")
 		instructions .= "log(label11 `. " . qm . "\" . rel_path  . qm . ")`nFileCreateDir`, `% label11 `. " . qm . "\" . rel_path  . qm . "`ninstr_count++`, progress := floor(100*(instr_count/instr_amount))`nGuiControl,, label14, `% progress`nGuiControl,, label15, `%progress`% ```%`n"
 		instr_amount_counter ++
 	}
-	console_log("copying resources from " . source_dir . ":`n")
+	console_log("generating instructions from files inside " . source_dir . ":`n")
 	Loop, Files, %source_dir%\*.*, FR
 	{
 		rel_path := SubStr(A_LoopFileFullPath, rel_pos)
 		if(A_LoopFileSize){
-			console_log(instr_amount_counter . ": " . rel_path . " -")
-			console_log(" copy file...")
-			FileCopy, %A_LoopFileFullPath%, build\%rel_path%
-			console_log(" write instr...`n")
+			console_log(instr_amount_counter . ": " . rel_path . "`n")
 			instructions .= "log(label11 `. " . qm . "\" . rel_path  . qm . ")`nFileInstall`," . auto_escape(rel_path) . "`, `% label11 `. " . qm . "\" . rel_path  . qm . ",1`ninstr_count++`, progress := floor(100*(instr_count/instr_amount))`nGuiControl,, label14, `% progress`nGuiControl,, label15, `%progress`% ```%`n"
-			instr_amount_counter ++
 		} else {
-			console_log(" (empty!) write instr...`n")
+			console_log(instr_amount_counter . ": " . rel_path . " (empty!)`n")
 			instructions .= "log(label11 `. " . qm . "\" . rel_path  . qm . ")`nFileAppend`, `% " qm . qm . "`, `% label11 `. " . qm . "\" . rel_path  . qm . "`ninstr_count++`, progress := floor(100*(instr_count/instr_amount))`nGuiControl,, label14, `% progress`nGuiControl,, label15, `%progress`% ```%`n"
-			instr_amount_counter ++
 		}
+		instr_amount_counter ++
 	}
 }
 rel_path := "Uninstall.exe"
-console_log(instr_amount_counter . ": (obligatory) " . rel_path . " -")
-console_log(" write instr...`n")
+console_log(instr_amount_counter . ": " . rel_path . " (obligatory)`n")
 instructions .= "log(label11 `. " . qm . "\" . rel_path  . qm . ")`nFileInstall`," . rel_path . "`, `% label11 `. " . qm . "\" . rel_path  . qm . ",1`ninstr_count++`, progress := floor(100*(instr_count/instr_amount))`nGuiControl,, label14, `% progress`nGuiControl,, label15, `%progress`% ```%`n"
 instr_amount_counter ++
 
@@ -206,8 +226,8 @@ console_log("writing instruction file 2/2...`n")
 
 instr_amount_counter ++
 instructions .= "log(" . qm . "Registry..." . qm . ")`n"
-instructions .= "AppKey := " . qm . "SOFTWARE\" . AppName . qm . "`n"
-instructions .= "UninstallKey := " . qm . "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\" . AppName . qm . "`n"
+instructions .= "AppKey := " . qm . "SOFTWARE\" . AppID . qm . "`n"
+instructions .= "UninstallKey := " . qm . "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\" . AppID . qm . "`n"
 instructions .= "AppPathKey := " . qm . "SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\" . source_exe . qm . "`n"
 instructions .= "SetRegView `% (A_Is64bitOS ? 64 : 32)`n"
 instructions .= "RegWrite REG_SZ, HKLM, `%AppKey`%, InstallDir, `%label11`%`n"
@@ -218,7 +238,7 @@ instructions .= "RegWrite REG_SZ, HKLM, `%UninstallKey`%, DisplayIcon, " . qm . 
 instructions .= "RegWrite REG_SZ, HKLM, `%UninstallKey`%, DisplayVersion, `%CONST_SETUP_APPVERSION`%`n"
 instructions .= "RegWrite REG_SZ, HKLM, `%UninstallKey`%, URLInfoAbout, `%CONST_SETUP_APPWEBSITE`%`n"
 instructions .= "RegWrite REG_SZ, HKLM, `%UninstallKey`%, Publisher, `%CONST_SETUP_APPAUTHORNAME`%`n"
-instructions .= "RegWrite REG_SZ, HKLM, `%UninstallKey`%, NoModify, 1`n"
+instructions .= "RegWrite REG_DWORD, HKLM, `%UninstallKey`%, NoModify, 1`n"
 instructions .= "RegWrite REG_SZ, HKLM, `%AppPathKey`%,, `%label11`%\" . source_exe . "`n"
 instructions .= "instr_count++`nprogress := floor(100*(instr_count/instr_amount))`nGuiControl,, label14, `% progress`nGuiControl,, label15, `%progress`% ```%`n"
 
@@ -236,9 +256,11 @@ FileAppend, RunAsAdmin()`n, % template_file
 FileAppend, #Include ../lang_packages/%language%.lp`n, % template_file
 FileAppend, CONST_SETUP_TITLE := "%AppName% %AppVersion%"`n, % template_file
 FileAppend, CONST_SETUP_APPNAME := "%AppName%"`n, % template_file
+FileAppend, CONST_SETUP_APPID := "%AppID%"`n, % template_file
 FileAppend, CONST_SETUP_APPEXE := "%source_exe%"`n, % template_file
 FileAppend, CONST_SETUP_APPVERSION := "%AppVersion%"`n, % template_file
 FileAppend, CONST_SETUP_STD_FOLDER := "%AppStdInstall%"`n, % template_file
+FileAppend, CONST_SETUP_APPSTARTMENU := "%AppStartMenu%"`n, % template_file
 FileAppend, CONST_SETUP_APPWEBSITE := "%AppWebsite%"`n, % template_file
 FileAppend, CONST_SETUP_APPAUTHORNAME := "%AppAuthorName%"`n, % template_file
 FileAppend, CONST_SETUP_APPWEBSITEAVAILABLE := %AppWebsiteAvailable%`n, % template_file
@@ -267,7 +289,9 @@ FileAppend, RunAsAdmin()`n, % template_file
 FileAppend, #Include ../lang_packages/%language%.lp`n, % template_file
 FileAppend, CONST_SETUP_TITLE := "%AppName% %AppVersion%"`n, % template_file
 FileAppend, CONST_SETUP_APPNAME := "%AppName%"`n, % template_file
+FileAppend, CONST_SETUP_APPID := "%AppID%"`n, % template_file
 FileAppend, CONST_SETUP_APPEXE := "%source_exe%"`n, % template_file
+FileAppend, CONST_SETUP_APPSTARTMENU := "%AppStartMenu%"`n, % template_file
 FileRead, template_content, uninstall_template.ahk
 FileAppend, % template_content, % template_file
 

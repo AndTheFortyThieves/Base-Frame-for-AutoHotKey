@@ -28,7 +28,7 @@ LANG_COMPLETED_TEXT := "has been installed on this Computer.`n`nClick Finish to 
 LANG_DESKTOP_SHORTCUT := "Create desktop shortcut"
 LANG_STARTPROG_SHORTCUT := "Create shortcut in \Start Menu\Programs"
 LANG_RUN := "Run"
-;-------------------------------------------------
+;SECTION END
 LANG_UNINSTALL := "Uninstall"
 LANG_DOUNINSTALL := "Uninstall"
 LANG_U_WELCOME_TEXT := "This uninstaller will remove the following program from your computer:"
@@ -40,3 +40,5 @@ LANG_CLEAN_REG := "Cleaning registry"
 LANG_REMOVE_SHORTCUTS := "Removing shortcuts"
 LANG_REMOVE_FILES := "Deleting files"
 LANG_FINISHED_UNINSTALL := "Uninstall complete! Click Finish to exit."
+;SECTION END
+BUILD_LANG_UNAIVAILABLE=not available

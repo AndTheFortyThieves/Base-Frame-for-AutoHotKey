@@ -16,7 +16,7 @@ Gui, Add, Text, x77 y6, % CONST_SETUP_TITLE . "`n" . LANG_UNINSTALL
 Gui, Add, Progress, cD4D0C8 x0 y57 h1 w500 +Border, 100
 Gui, Add, Progress, cF0F0F0 x0 y182 h1 w500 +Border, 100
 Gui, Font, s10 c888888, Segoe UI
-Gui, Add, Text, x5 y282 gAbout, ahksetup 1.0
+Gui, Add, Text, x5 y282 gAbout, ahksetup 1.2
 Gui, Font, s8 c000000, Segoe UI
 
 ;text + button initialization
@@ -110,8 +110,8 @@ Uninstall:
 	}
 	
 	;Registry
-	AppKey := "SOFTWARE\" . CONST_SETUP_APPNAME
-	UninstallKey := "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\" . CONST_SETUP_APPNAME
+	AppKey := "SOFTWARE\" . CONST_SETUP_APPID
+	UninstallKey := "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\" . CONST_SETUP_APPID
 	AppPathKey := "SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\" . CONST_SETUP_APPEXE
 	SetRegView % (A_Is64bitOS ? 64 : 32)
 	RegDelete, HKLM, % AppKey
@@ -130,7 +130,7 @@ Uninstall:
 	
 	;Links
 	FileDelete, %A_Desktop%\%CONST_SETUP_APPNAME%.lnk
-	FileDelete, %A_Startmenu%\%CONST_SETUP_APPNAME%.lnk
+	FileRemoveDir, %A_ProgramsCommon%\%CONST_SETUP_APPSTARTMENU%, 1
 	
 	Gui, Font, c00CC00 normal
 	GuiControl, Font, label6

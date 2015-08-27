@@ -28,7 +28,7 @@ LANG_COMPLETED_TEXT := "wurde auf dem Computer installiert.`n`nKlicken Sie auf F
 LANG_DESKTOP_SHORTCUT := "Erstelle Desktop-Verknüpfung"
 LANG_STARTPROG_SHORTCUT := "Erstelle Verknüpfung in \Start Menu\Programs"
 LANG_RUN := "Starte"
-;-------------------------------------------------
+;SECTION END
 LANG_UNINSTALL := "Deinstallation"
 LANG_DOUNINSTALL := "Deinstallieren"
 LANG_U_WELCOME_TEXT := "Dieser Uninstaller wird folgendes Programm von ihrem Rechner entfernen:"
@@ -40,3 +40,5 @@ LANG_CLEAN_REG := "Registry bereinigen"
 LANG_REMOVE_SHORTCUTS := "Verknüpfungen entfernen"
 LANG_REMOVE_FILES := "Dateien löschen"
 LANG_FINISHED_UNINSTALL := "Deinstallation abgeschlossen! Klicken Sie auf Fertig zum Beenden."
+;SECTION END
+BUILD_LANG_UNAIVAILABLE=Nicht verfügbar
