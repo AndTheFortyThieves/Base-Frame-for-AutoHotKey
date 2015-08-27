@@ -24,3 +24,6 @@
 1.0		-added integrated uninstaller, consisting from the unistall starter and the uninstaller
 		-added uninstaller template + uninst_start template
 		-generated a new example setup, that will automatically extract a fully functioning uninstaller besides the example program
+1.1		-automatic escaping of filenames for fileinstall
+		-fixed Ahk2Exe Error for empty files bug
+		-added ToDo list, goals for v2.0

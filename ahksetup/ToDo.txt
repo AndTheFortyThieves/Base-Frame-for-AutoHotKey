@@ -1,0 +1,20 @@
+- "build": Ahk2Exe-Fehler bei Dateien mit Komma im Namen							Ahk2Exe Bug, trotz escapen nicht behebbar
+- "build": Ahk2Exe-Fehler bei leeren Dateien										gefixt
+- "build": nur Befehle schreiben, danach den gesamten Quellordner kopieren			-
+- als Setup-Icon sollte man auch eine Exe angeben können							-
+- Update-Funktion integrieren:
+	- Startparameter um Setup-Programme als Update starten zu lassen				-
+	- Lösch-Liste bei Updates														-
+- portable Installation integrieren:
+	- Auswahl sowohl für Hersteller und User										-
+	- nur Dateiextrahierung, keine Verknüpfungen, keine Registry					-
+	- bestehende portable Installation erkennen -> prüfen ob im Programmordner		-
+- Dateitypenverknüpfung & Kontextmenüeinträge durch Setup							-
+- Startmenü Einträge in einem Unterordner sein mit Uninstaller						-
+- Name von StartMenü-Ordner konfigurierbar durch Hersteller(Default) und User		-
+- Registry Eintrag "NoModify" REG_DWORD statt REG_SZ								-
+- Registry-ID durch Hersteller festlegbar (endeutige Applikationsbezeichn.)			-
+- Installer muss bei erneutem Aufruf best. Installation erkennen					-
+- Bei bestehender Installation Auswahl: Aktualisieren, Deinstallieren				-
+- Bei Deinstallation über Setup und fehlender Uninstall.exe -> entpacken			-
+- Lediglich Programmname, Version, Autor als Pflichtangaben							-

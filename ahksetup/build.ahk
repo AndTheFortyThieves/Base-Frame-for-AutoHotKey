@@ -175,25 +175,31 @@ if(single) {
 		console_log(" create dir...")
 		FileCreateDir, build\%rel_path%
 		console_log(" write instr...`n")
-		instructions .= "log(label11 `. " . qm . "\" . rel_path  . qm . ")`nFileCreateDir`, `% label11 `. " . qm . "\" . rel_path  . qm . "`ninstr_count++`nprogress := floor(100*(instr_count/instr_amount))`nGuiControl,, label14, `% progress`nGuiControl,, label15, `%progress`% ```%`n"
+		instructions .= "log(label11 `. " . qm . "\" . rel_path  . qm . ")`nFileCreateDir`, `% label11 `. " . qm . "\" . rel_path  . qm . "`ninstr_count++`, progress := floor(100*(instr_count/instr_amount))`nGuiControl,, label14, `% progress`nGuiControl,, label15, `%progress`% ```%`n"
 		instr_amount_counter ++
 	}
 	console_log("copying resources from " . source_dir . ":`n")
 	Loop, Files, %source_dir%\*.*, FR
 	{
 		rel_path := SubStr(A_LoopFileFullPath, rel_pos)
-		console_log(instr_amount_counter . ": " . rel_path . " -")
-		console_log(" copy file...")
-		FileCopy, %A_LoopFileFullPath%, build\%rel_path%
-		console_log(" write instr...`n")
-		instructions .= "log(label11 `. " . qm . "\" . rel_path  . qm . ")`nFileInstall`," . rel_path . "`, `% label11 `. " . qm . "\" . rel_path  . qm . ",1`ninstr_count++`nprogress := floor(100*(instr_count/instr_amount))`nGuiControl,, label14, `% progress`nGuiControl,, label15, `%progress`% ```%`n"
-		instr_amount_counter ++
+		if(A_LoopFileSize){
+			console_log(instr_amount_counter . ": " . rel_path . " -")
+			console_log(" copy file...")
+			FileCopy, %A_LoopFileFullPath%, build\%rel_path%
+			console_log(" write instr...`n")
+			instructions .= "log(label11 `. " . qm . "\" . rel_path  . qm . ")`nFileInstall`," . auto_escape(rel_path) . "`, `% label11 `. " . qm . "\" . rel_path  . qm . ",1`ninstr_count++`, progress := floor(100*(instr_count/instr_amount))`nGuiControl,, label14, `% progress`nGuiControl,, label15, `%progress`% ```%`n"
+			instr_amount_counter ++
+		} else {
+			console_log(" (empty!) write instr...`n")
+			instructions .= "log(label11 `. " . qm . "\" . rel_path  . qm . ")`nFileAppend`, `% " qm . qm . "`, `% label11 `. " . qm . "\" . rel_path  . qm . "`ninstr_count++`, progress := floor(100*(instr_count/instr_amount))`nGuiControl,, label14, `% progress`nGuiControl,, label15, `%progress`% ```%`n"
+			instr_amount_counter ++
+		}
 	}
 }
 rel_path := "Uninstall.exe"
 console_log(instr_amount_counter . ": (obligatory) " . rel_path . " -")
 console_log(" write instr...`n")
-instructions .= "log(label11 `. " . qm . "\" . rel_path  . qm . ")`nFileInstall`," . rel_path . "`, `% label11 `. " . qm . "\" . rel_path  . qm . ",1`ninstr_count++`nprogress := floor(100*(instr_count/instr_amount))`nGuiControl,, label14, `% progress`nGuiControl,, label15, `%progress`% ```%`n"
+instructions .= "log(label11 `. " . qm . "\" . rel_path  . qm . ")`nFileInstall`," . rel_path . "`, `% label11 `. " . qm . "\" . rel_path  . qm . ",1`ninstr_count++`, progress := floor(100*(instr_count/instr_amount))`nGuiControl,, label14, `% progress`nGuiControl,, label15, `%progress`% ```%`n"
 instr_amount_counter ++
 
 console_log("writing instruction file 2/2...`n")
@@ -299,4 +305,11 @@ ExitApp
 console_log(text){
 	FileAppend, % text, CONOUT$
 	FileAppend, % text, log.txt
+}
+
+auto_escape(path) {
+	StringReplace, path, path, ``, ````, 1
+	StringReplace, path, path, `,, ```,, 1
+	StringReplace, path, path, `%, ```%, 1
+	return path
 }
