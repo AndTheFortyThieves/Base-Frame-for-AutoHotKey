@@ -128,6 +128,12 @@ Uninstall:
 	GuiControl, Font, label6
 	GuiControl, Font, label9
 	
+	Loop, Read, % CONST_SETUP_INSTALLDIR . "\" . CONST_SETUP_APPUNINSTREG
+	{
+		if (A_LoopReadLine != "")
+			RegDelete, %A_LoopReadLine%
+	}
+	
 	;Links
 	FileDelete, %A_Desktop%\%CONST_SETUP_APPNAME%.lnk
 	FileRemoveDir, %A_ProgramsCommon%\%CONST_SETUP_APPSTARTMENU%, 1
@@ -143,6 +149,12 @@ Uninstall:
 	GuiControl, Font, label10
 	
 	;Files
+	
+	Loop, Read, % CONST_SETUP_INSTALLDIR . "\" . CONST_SETUP_APPUNINSTFILES
+	{
+		if (A_LoopReadLine != "")
+			FileDelete, %A_LoopReadLine%
+	}
 	FileRemoveDir, % CONST_SETUP_INSTALLDIR, 1
 	
 	Gui, Font, c00CC00 normal
@@ -154,6 +166,8 @@ Uninstall:
 	
 	GuiControl, -Disabled, buttonnext
 	GuiControl, +Disabled, buttoncancel
+	
+	DllCall("shell32\SHChangeNotify", "uint", 0x08000000, "uint", 0, "int", 0, "int", 0) ; SHCNE_ASSOCCHANGED
 Return
 
 

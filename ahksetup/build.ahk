@@ -106,27 +106,39 @@ console_log("starting...`n")
 if !FileExist(source_dir . "\appinfo.ini"){
 	console_log("ERROR: Couldn't find " . source_dir . "\appinfo.ini")
 	gosub, Exit
-} else {
-	IniRead, AppName, % source_dir . "\appinfo.ini", AppInfo, AppName, % A_Space
-	IniRead, AppID, % source_dir . "\appinfo.ini", AppInfo, AppID, % AppName
-	IniRead, AppVersion, % source_dir . "\appinfo.ini", AppInfo, AppVersion, % A_Space
-	IniRead, AppUpdateVersion, % source_dir . "\appinfo.ini", AppInfo, AppUpdateVersion, % A_Space
-	IniRead, AppAuthorName, % source_dir . "\appinfo.ini", AppInfo, AppAuthorName, % A_Space
-	IniRead, AppAuthorEmail, % source_dir . "\appinfo.ini", AppInfo, AppAuthorEmail, % A_Space
-	IniRead, AppChangelog, % source_dir . "\appinfo.ini", AppInfo, AppChangelog, % A_Space
-	IniRead, AppStdInstall, % source_dir . "\appinfo.ini", AppInfo, AppStdInstall, % AppName
-	IniRead, AppStartMenu, % source_dir . "\appinfo.ini", AppInfo, AppStartMenu, % AppName
-	IniRead, AppWebsite, % source_dir . "\appinfo.ini", AppInfo, AppWebsite, % A_Space
-	IniRead, AppIcon, % source_dir . "\appinfo.ini", AppInfo, AppIcon, %A_WorkingDir%\setupicon.ico
-	AppInfoIncomplete := (!AppName or !AppVersion or !AppUpdateVersion or !AppAuthorName)
-	if AppInfoIncomplete {
-		console_log("ERROR: Incomplete appinfo.ini!")
+}
+IniRead, AppName, % source_dir . "\appinfo.ini", AppInfo, AppName, % A_Space
+IniRead, AppID, % source_dir . "\appinfo.ini", AppInfo, AppID, % AppName
+IniRead, AppVersion, % source_dir . "\appinfo.ini", AppInfo, AppVersion, % A_Space
+IniRead, AppUpdateVersion, % source_dir . "\appinfo.ini", AppInfo, AppUpdateVersion, % A_Space
+IniRead, AppAuthorName, % source_dir . "\appinfo.ini", AppInfo, AppAuthorName, % A_Space
+IniRead, AppAuthorEmail, % source_dir . "\appinfo.ini", AppInfo, AppAuthorEmail, % A_Space
+IniRead, AppChangelog, % source_dir . "\appinfo.ini", AppInfo, AppChangelog, % A_Space
+IniRead, AppStdInstall, % source_dir . "\appinfo.ini", AppInfo, AppStdInstall, % AppName
+IniRead, AppStartMenu, % source_dir . "\appinfo.ini", AppInfo, AppStartMenu, % AppName
+IniRead, AppWebsite, % source_dir . "\appinfo.ini", AppInfo, AppWebsite, % A_Space
+IniRead, AppFileTypes, % source_dir . "\appinfo.ini", AppInfo, AppFileTypes, % A_Space
+IniRead, AppIcon, % source_dir . "\appinfo.ini", AppInfo, AppIcon, %A_WorkingDir%\setupicon.ico
+IniRead, AppUninstFiles, % source_dir . "\appinfo.ini", AppInfo, AppUninstFiles, % A_Space
+IniRead, AppUninstReg, % source_dir . "\appinfo.ini", AppInfo, AppUninstReg, % A_Space
+AppInfoIncomplete := (!AppName or !AppVersion or !AppUpdateVersion or !AppAuthorName)
+if AppInfoIncomplete {
+	console_log("ERROR: Incomplete appinfo.ini!")
+	gosub, Exit
+}
+AppChangelogAvailable := !(!AppChangelog)
+AppWebsiteAvailable := !(!AppWebsite)
+AppAuthorEmailAvailable := !(!AppAuthorEmail)
+AppUsesFileTypes := !(!AppFileTypes)
+
+if AppUsesFileTypes {
+	if !FileExist(source_dir . "\" . AppFileTypes){
+		console_log("ERROR: Couldn't find " . source_dir . "\" . AppFileTypes)
 		gosub, Exit
 	}
-	AppChangelogAvailable := !(!AppChangelog)
-	AppWebsiteAvailable := !(!AppWebsite)
-	AppAuthorEmailAvailable := !(!AppAuthorEmail)
+	IniRead, AppAssociatedFileTypes, % source_dir . "\" . AppFileTypes
 }
+	
 console_log("Application Info:`n")
 console_log("AppName=" . AppName . "`n")
 console_log("AppID=" . AppID . "`n")
@@ -146,6 +158,9 @@ if AppChangelogAvailable
 console_log("AppWebsiteAvailable=" . AppWebsiteAvailable . "`n")
 if AppWebsiteAvailable
 	console_log("AppWebsite=" . AppWebsite . "`n")
+console_log("AppUsesFileTypes=" . AppUsesFileTypes . "`n")
+if AppUsesFileTypes
+	console_log("--- AppAssociatedFileTypes:`n" . AppAssociatedFileTypes . "`n---`n")
 if(gnu_gpl){
 	console_log("license: GNU General Public License v3`n")
 	console_log("         language: " . language . "`n")
@@ -185,6 +200,26 @@ FileRemoveDir, build, 1
 FileCreateDir, build
 FileCopyDir, % source_dir, build, 1
 IniWrite, %AppID%, build/appinfo.ini, AppInfo, AppID
+if !AppUninstFiles
+{
+	uniquename := "uninstf" . A_TickCount
+	while (FileExist("build\" . uniquename)){
+		uniquename .= 0
+	}
+	AppUninstFiles := uniquename
+	console_log("creating AppUninstFiles: '" . AppUninstFiles . "'`n")
+}
+if !AppUninstReg
+{
+	uniquename := "uninstr" . A_TickCount
+	while (FileExist("build\" . uniquename)){
+		uniquename .= 0
+	}
+	AppUninstReg := uniquename
+	console_log("creating AppUninstReg: '" . AppUninstReg . "'`n")
+}
+IniWrite, %AppUninstFiles%, build/appinfo.ini, AppInfo, AppUninstFiles
+IniWrite, %AppUninstReg%, build/appinfo.ini, AppInfo, AppUninstReg
 console_log("writing instruction file 1/2...`n")
 instructions := "Gui`,Submit`,NoHide`n"
 instr_amount_counter := 0
@@ -240,9 +275,62 @@ instructions .= "RegWrite REG_SZ, HKLM, `%UninstallKey`%, URLInfoAbout, `%CONST_
 instructions .= "RegWrite REG_SZ, HKLM, `%UninstallKey`%, Publisher, `%CONST_SETUP_APPAUTHORNAME`%`n"
 instructions .= "RegWrite REG_DWORD, HKLM, `%UninstallKey`%, NoModify, 1`n"
 instructions .= "RegWrite REG_SZ, HKLM, `%AppPathKey`%,, `%label11`%\" . source_exe . "`n"
+if AppUsesFileTypes {
+	AppFileTypesIni := source_dir . "\" . AppFileTypes
+	Loop, Parse, AppAssociatedFileTypes, `n
+	{
+		filetype := A_LoopField
+		IniRead, Type_Name, % AppFileTypesIni, % filetype, Type_Name, % filetype
+		IniRead, Type_Extension, % AppFileTypesIni, % filetype, Type_Extension, % A_Space
+		IniRead, Type_Icon, % AppFileTypesIni, % filetype, Type_Icon, % A_Space
+		IniRead, Type_NewFile, % AppFileTypesIni, % filetype, Type_NewFile, % A_Space
+		IniRead, MenuDefault, % AppFileTypesIni, % filetype, Default, % A_Space
+		if !Type_Extension {
+			console_log("ERROR: no extension specified for AppFileType '" . filetype . "'! Skipping...`n")
+			continue
+		}
+		instructions .= "RegRead, null, HKCR, ." . Type_Extension . "`nExtensionIsAppProperty := ErrorLevel`nRegRead, null, HKCR, " . filetype . "`nTypeIsAppProperty := (ErrorLevel && ExtensionIsAppProperty)`nif !TypeIsAppProperty`n{`nRegRead, TypeOwner, HKCR, " . filetype . ",Owner`nTypeIsAppProperty := (TypeOwner == CONST_SETUP_APPID)`n}`nif TypeIsAppProperty`n{`nRegWrite, REG_SZ, HKCR, " . filetype . ",Owner,`%CONST_SETUP_APPID`%`n}`nif TypeIsAppProperty`n{`n"
+		instructions .= "RegWrite REG_SZ, HKCR, ." . Type_Extension . ",, " . filetype . "`n"
+		instructions .= "FileAppend, ``nHKCR\." . Type_Extension . ", `%label11`%\" . AppUninstReg . "`n"
+		instructions .= "FileAppend, ``nHKCR\" . filetype . ", `%label11`%\" . AppUninstReg . "`n"
+		if Type_NewFile {
+			SplitPath, Type_NewFile,,, Type_NewFileExtension
+			if !FileExist(source_dir . "\" . Type_NewFile){
+				console_log("ERROR: Couldn't find " . source_dir . "\" . Type_NewFile . " (File template for AppFileType '" . filetype . "')`n")
+			} else if (Type_NewFileExtension != Type_Extension) {
+				console_log("ERROR: " . Type_NewFile . " (File template for AppFileType '" . filetype . "') is not of type '." . Type_Extension . "'`n")
+			} else {
+				instructions .= "FileAppend, ``n`%A_WinDir`%\ShellNew\" . Type_NewFile . ", `%label11`%\" . AppUninstFiles . "`n"
+				instructions .= "FileInstall, " . Type_NewFile . ", `%A_WinDir`%\ShellNew\" . Type_NewFile . ", 1`n"
+				instructions .= "RegWrite, REG_SZ, HKCR, ." . Type_Extension . "\ShellNew, FileName, " . Type_NewFile . "`n"
+			}
+		}
+		instructions .= "RegWrite REG_SZ, HKCR, " . filetype . ",, " . Type_Name . "`n"
+		if Type_Icon
+			instructions .= "RegWrite REG_SZ, HKCR, " . filetype . "\DefaultIcon,, `%label11`%\" . Type_Icon . "`n"
+		instructions .= "RegWrite REG_SZ, HKCR, " . filetype . "\Shell\,," . MenuDefault . "`n"
+		instructions .= "}`n"
+		IniRead, FileTypeAttributes, % AppFileTypesIni, % filetype
+		Loop, Parse, FileTypeAttributes, `n
+		{
+			if ((SubStr(AttrTitle := (StrSplit(A_LoopField, "="))[1], 1, 5) == "Menu_") ? (MenuEntry := SubStr(AttrTitle, 6)) : 0)
+			{
+				IniRead, MenuEntryDescription, % AppFileTypesIni, % filetype, % "Menu_" . MenuEntry
+				MenuEntryDisplayName := (StrSplit(MenuEntryDescription, ","))[1]
+				MenuEntryCommand := SubStr(MenuEntryDescription, StrLen(MenuEntryDisplayName) + 2)
+				;MsgBox %MenuEntry%`n%MenuEntryDisplayName%`n%MenuEntryCommand%
+				instructions .= "FileAppend, ``nHKCR\" . filetype . "\Shell\" . MenuEntry . ", `%label11`%\" . AppUninstReg . "`n"
+				instructions .= "RegWrite REG_SZ, HKCR, " . filetype . "\Shell\" . MenuEntry . ",," . MenuEntryDisplayName . "`n"
+				instructions .= "MenuCommand=" . auto_escape(MenuEntryCommand) . "`n"
+				instructions .= "RegWrite REG_SZ, HKCR, " . filetype . "\Shell\" . MenuEntry . "\Command,,`%MenuCommand`%`n"
+			}
+		}
+	}
+}
 instructions .= "instr_count++`nprogress := floor(100*(instr_count/instr_amount))`nGuiControl,, label14, `% progress`nGuiControl,, label15, `%progress`% ```%`n"
-
 instructions := "instr_count := 0`ninstr_amount := " instr_amount_counter . "`n" . instructions
+
+
 console_log("----- instruction output -----`n" . instructions . "------------------------------`n")
 console_log("processing:`n")
 console_log("adding setup_template...`n")
@@ -292,6 +380,8 @@ FileAppend, CONST_SETUP_APPNAME := "%AppName%"`n, % template_file
 FileAppend, CONST_SETUP_APPID := "%AppID%"`n, % template_file
 FileAppend, CONST_SETUP_APPEXE := "%source_exe%"`n, % template_file
 FileAppend, CONST_SETUP_APPSTARTMENU := "%AppStartMenu%"`n, % template_file
+FileAppend, CONST_SETUP_APPUNINSTFILES := "%AppUninstFiles%"`n, % template_file
+FileAppend, CONST_SETUP_APPUNINSTREG := "%AppUninstReg%"`n, % template_file
 FileRead, template_content, uninstall_template.ahk
 FileAppend, % template_content, % template_file
 

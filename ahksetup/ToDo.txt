@@ -9,7 +9,7 @@ x als Setup-Icon sollte man auch eine Exe angeben können							zurückgenommen, n
 	- Auswahl sowohl für Hersteller und User										-
 	- nur Dateiextrahierung, keine Verknüpfungen, keine Registry					-
 	- bestehende portable Installation erkennen -> prüfen ob im Programmordner		-
-- Dateitypenverknüpfung & Kontextmenüeinträge durch Setup							-
+- Dateitypenverknüpfung & Kontextmenüeinträge durch Setup							hinzugefügt
 - Startmenü Einträge in einem Unterordner mit Uninstaller							hinzugefügt
 - Name von StartMenü-Ordner konfigurierbar durch Hersteller(Default) (und User?)	hinzugefügt
 	-> Uninstall-Aufruf über StartMenü verfügt nicht über ausreichende Rechte		gefixt
@@ -19,3 +19,5 @@ x als Setup-Icon sollte man auch eine Exe angeben können							zurückgenommen, n
 - Bei bestehender Installation Auswahl: Aktualisieren, Deinstallieren				-
 - Bei Deinstallation über Setup und fehlender Uninstall.exe -> entpacken			-
 - Lediglich Programmname, Version, Autor als Pflichtangaben							hinzugefügt
+- Initialisierungsskript welches bei Installation ausgeführt wird					-
+- Datei-/Registry-Löschliste für Deinstallation										hinzugefügt

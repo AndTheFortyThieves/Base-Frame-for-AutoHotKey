@@ -33,3 +33,6 @@
 		- registry entry "NoModify" REG_DWORD instead of REG_SZ
 		- added AppID as unique application identifier (keeping registry consistent when programs display name changes)
 		- made AppAuthorEmail optional
+1.3		- added AppFileTypes, setup can now install new filetypes and modify existing filetypes while installing
+		- added AppUninstFiles, a file that holds a list of files that have to be removed by the uninstaller and can be extended by the installed app
+		- added AppUninstReg, a file that holds a list of registry keys that have to be removed by the uninstaller and can be extended by the installed app

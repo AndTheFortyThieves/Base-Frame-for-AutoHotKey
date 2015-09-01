@@ -178,6 +178,7 @@ Install:
 	if !FileExist(label11)
 		FileCreateDir, % label11
 	#Include ../instructions
+	DllCall("shell32\SHChangeNotify", "uint", 0x08000000, "uint", 0, "int", 0, "int", 0) ; SHCNE_ASSOCCHANGED
 	log(LANG_FINISHED . " --")
 	GuiControl, Text, label23, % LANG_FINISHED . "!"
 	GuiControl, -Disabled, buttonnext
