@@ -4,13 +4,50 @@
 SetBatchLines, -1
 #NoEnv
 #SingleInstance Ignore
-SetWorkingDir %A_ScriptDir%
+AutoUpdate=%1%
+AutoUpdate := (AutoUpdate == "AutoUpdate") ? 1 : 0
+if !AutoUpdate
+	SetWorkingDir %A_ScriptDir%
+OnMessage(0x200, "MouseHover")
 
 MAIN_INSTALLATION_FINISHED := 0
 MAIN_SITE := 0
 
 FileInstall, ../license.txt, %A_Temp%/license.txt, 1
+FileInstall, ../res/buttonbg.png, %A_Temp%/buttonbg.png, 1
 FileRead, CONST_LICENSE_TEXT, %A_Temp%/license.txt
+
+SetRegView, 64
+RegRead, AppCurrentInstallDir, HKEY_LOCAL_MACHINE\SOFTWARE\%CONST_SETUP_APPID%, InstallDir
+AppExistingInstallation := !ErrorLevel
+ExistingInstallationType := 0
+if (!AppExistingInstallation && CONST_SETUP_APPPORTABILITY > 0) {
+	if FileExist(CONST_SETUP_APPID . "\appinfo.ini") {
+		IniRead, tmp, % CONST_SETUP_APPID . "\appinfo.ini", AppInfo, AppID
+		AppExistingInstallation := (tmp == CONST_SETUP_APPID)
+	}
+	ExistingInstallationType := 1
+}
+if AppExistingInstallation {
+	if !AutoUpdate
+		MAIN_SITE := -1
+	CONST_SETUP_APPPORTABILITY := ExistingInstallationType
+	;use update texts:
+	LANG_WELCOME_TEXT := LANG_UPD_WELCOME_TEXT
+	LANG_RECOMMENDATION := LANG_UPD_RECOMMENDATION
+	LANG_INSTALL := LANG_UPD_INSTALL
+	LANG_COMPLETED := LANG_UPD_COMPLETED
+	LANG_LICENSE_AGREE := LANG_UPD_LICENSE_AGREE
+	;check versions
+	if (ExistingInstallationType == 0)
+		IniRead, AppCurrentUpdateVersion, % AppCurrentInstallDir . "\appinfo.ini", AppInfo, AppUpdateVersion
+	else
+		IniRead, AppCurrentUpdateVersion, % CONST_SETUP_APPID . "\appinfo.ini", AppInfo, AppUpdateVersion
+	if (AppCurrentUpdateversion = CONST_SETUP_APPUPDATEVERSION)
+		UpdateReinstall := 1
+	if (AppCurrentUpdateversion > CONST_SETUP_APPUPDATEVERSION)
+		UpdateRevert := 1
+}
 
 Gui, Color, FFFFFF
 Gui, Add, Pic, x6 y6 w47 h47 Icon1, %A_ScriptFullPath%
@@ -19,7 +56,7 @@ Gui, Add, Text, x77 y6, % CONST_SETUP_TITLE . "`n" . LANG_INSTALLATION
 Gui, Add, Progress, cD4D0C8 x0 y57 h1 w500 +Border, 100
 Gui, Add, Progress, cF0F0F0 x0 y252 h1 w500 +Border, 100
 Gui, Font, s10 c888888, Segoe UI
-Gui, Add, Text, x5 y282 gAbout, ahksetup 1.2
+Gui, Add, Text, x5 y282 gAbout, ahksetup 1.4
 Gui, Font, s8 c000000, Segoe UI
 
 ;text + button initialization
@@ -32,6 +69,17 @@ Gui, Font, s9 c000000 bold, Segoe UI
 Gui, Add, Text, vlabel1 x10 y65, % LANG_WELCOME
 Gui, Font, s9 c000000 normal, Segoe UI
 Gui, Add, Text, vlabel2 x10 y82 w480, % LANG_WELCOME_TEXT . "`n" . CONST_SETUP_TITLE . "."
+if (CONST_SETUP_APPPORTABILITY == 0) {
+	SetupTypeNormal := 1, SetupTypePortable := 0
+}
+if (CONST_SETUP_APPPORTABILITY == 1) {
+	Gui, Add, Text, x10 y212 vlabel24, % LANG_PORTABLE_HINT
+	SetupTypeNormal := 0, SetupTypePortable := 1
+}
+if (CONST_SETUP_APPPORTABILITY == 2) {
+	Gui, Add, Radio, vSetupTypeNormal -Wrap Checked x10 y212, % LANG_TYPE_NORMAL
+	Gui, Add, Radio, vSetupTypePortable -Wrap x10 y230, % LANG_TYPE_PORTABLE
+}
 Gui, Font, s8 c2222FF, Segoe UI
 if (CONST_SETUP_APPWEBSITEAVAILABLE)
 	Gui, Add, Text, gOpenWebsite vlabel22 x10 y119 w480, % CONST_SETUP_APPWEBSITE
@@ -56,7 +104,8 @@ Gui, Add, Button, gChooseFolder vlabel12 x390 y182 w90 h25, % LANG_BROWSE
 Gui, Font, s9 c000000 bold, Segoe UI
 Gui, Add, Text, vlabel13 x10 y65, % LANG_INSTALLING
 Gui, Font, s9 c000000 normal, Segoe UI
-Gui, Add, Progress, vlabel14 x10 y82 h20 w450 +Border c1111DD, 0
+Gui, Add, Progress, vlabel14 x10 y86 h12 w450 -Border c111111, 0
+;c1111DD
 Gui, Add, Text, vlabel23 x10 y107 h16 w450, ...
 Gui, Add, Text, vlabel15 x465 y83 w35, 0`%
 Gui, Add, Edit, vlabel16 x10 y128 w480 h120 ReadOnly, % "-- " . CONST_SETUP_TITLE . " " . LANG_SETUP
@@ -64,11 +113,22 @@ Gui, Add, Edit, vlabel16 x10 y128 w480 h120 ReadOnly, % "-- " . CONST_SETUP_TITL
 Gui, Font, s9 c000000 bold, Segoe UI
 Gui, Add, Text, vlabel17 x10 y65, % LANG_COMPLETED
 Gui, Font, s9 c000000 normal, Segoe UI
-Gui, Add, Text, vlabel18 x10 y82 w480, % CONST_SETUP_TITLE . " " . LANG_COMPLETED_TEXT
+Gui, Add, Text, vlabel18 x10 y82 w480, % CONST_SETUP_TITLE . " (" . CONST_SETUP_APPUPDATEVERSION . ") " . LANG_COMPLETED_TEXT
 Gui, Add, Checkbox, vlabel19 x20 y140 +Checked, % LANG_DESKTOP_SHORTCUT
 Gui, Add, Checkbox, vlabel20 x20 y165 +Checked, % LANG_STARTPROG_SHORTCUT
 Gui, Add, Checkbox, vlabel21 x20 y190 +Checked, % LANG_RUN . " " . CONST_SETUP_TITLE
 
+Gui, Font, s9 c000000 bold, Segoe UI
+Gui, Add, Text, vlabel25 x10 y65, % LANG_WELCOME
+Gui, Font, s9 c000000 normal, Segoe UI
+Gui, Add, Text, vlabel26 x10 y82 w480, % LANG_EXISTING_INSTALLATION . " " . AppCurrentUpdateVersion
+;Gui, Add, Button, vlabel27 gUninstall x20 y150 w100 h22, Deinstallieren
+;Gui, Add, Button, vlabel28 gNext x20 y180 w100 h22, % "Update" . " (" . CONST_SETUP_APPUPDATEVERSION . ")"
+Gui, Add, Picture, vlabel27 HwndhUninst gUninstall x20 y140 h35 +Border, %A_Temp%/buttonbg.png
+Gui, Add, Picture, vlabel28 HwndhNext gNext x20 y190 h35 +Border, %A_Temp%/buttonbg.png
+Gui, Font, s13 c333333 normal, Segoe UI
+Gui, Add, Text, vlabel29 HwndhUninstT gUninstall x30 y147 BackgroundTrans, % LANG_DOUNINSTALL
+Gui, Add, Text, vlabel30 HwndhNextT gUninstall x30 y197 BackgroundTrans, % LANG_UPD_INSTALL . " (" . (UpdateReinstall ? (LANG_UPD_REINSTALL . " ") : (UpdateRevert ? (LANG_UPD_REVERT . " ") : "")) . CONST_SETUP_APPUPDATEVERSION . ")"
 
 gosub, Next
 Gui, Show, w500 h300, % CONST_SETUP_TITLE . " " . LANG_SETUP
@@ -91,15 +151,29 @@ Next:
 MAIN_SITE++
 
 ;clear all labels
-Loop, 23
+Loop, 30
 	GuiControl, Hide, label%A_Index%
 GuiControl, Text, buttonnext, % LANG_NEXT . " >"
 GuiControl, Text, buttoncancel, % LANG_CANCEL
+GuiControl, Hide, SetupTypeNormal
+GuiControl, Hide, SetupTypePortable
+Gui, Submit, NoHide
 
+if(MAIN_SITE = 0){
+	Loop, 6
+		GuiControl, Show, % "label" . A_Index + 24
+	GuiControl, Hide, buttonback
+	GuiControl, Hide, buttonlicense
+	GuiControl, Hide, buttonnext
+}
 if(MAIN_SITE = 1){
 	Loop, 3
 		GuiControl, Show, label%A_Index%
 	GuiControl, Show, label22
+	GuiControl, Show, label24
+	GuiControl, Show, SetupTypeNormal
+	GuiControl, Show, SetupTypePortable
+	GuiControl, Show, buttonnext
 	GuiControl, Hide, buttonback
 	GuiControl, Hide, buttonlicense
 }
@@ -108,15 +182,33 @@ if(MAIN_SITE = 2){
 		GuiControl, Show, % "label" . A_Index + 3
 	GuiControl, Show, buttonback
 	GuiControl, Show, buttonlicense
-	GuiControl, Text, buttonnext, % LANG_AGREE
+	if (SetupTypePortable and !AppExistingInstallation) {
+		GuiControl, Text, label7, % LANG_PTB_LICENSE_AGREE
+		GuiControl, Text, buttonnext, % LANG_INSTALL
+	} else if AppExistingInstallation {
+		GuiControl, Text, buttonnext, % LANG_INSTALL
+	} else {
+		GuiControl, Text, label7, % LANG_LICENSE_AGREE
+		GuiControl, Text, buttonnext, % LANG_AGREE
+	}
 	GuiControl, Text, buttoncancel, % LANG_DECLINE
 }
 if(MAIN_SITE = 3){
-	Loop, 5
-		GuiControl, Show, % "label" . A_Index + 7
-	GuiControl, Show, buttonback
 	GuiControl, Hide, buttonlicense
-	GuiControl, Text, buttonnext, % LANG_INSTALL
+	if SetupTypePortable
+	{
+		GuiControl, Text, label11, % A_WorkingDir . "\" . CONST_SETUP_APPID
+		FileCreateDir, % A_WorkingDir . "\" . CONST_SETUP_APPID
+		MAIN_SITE := 4
+	} else if AppExistingInstallation {
+		GuiControl, Text, label11, % AppCurrentInstallDir
+		MAIN_SITE := 4
+	} else {
+		Loop, 5
+			GuiControl, Show, % "label" . A_Index + 7
+		GuiControl, Show, buttonback
+		GuiControl, Text, buttonnext, % LANG_INSTALL
+	}
 }
 if(MAIN_SITE = 4){
 	Loop, 4
@@ -128,8 +220,14 @@ if(MAIN_SITE = 4){
 	gosub, Install
 }
 if(MAIN_SITE = 5){
-	Loop, 5
-		GuiControl, Show, % "label" . A_Index + 16
+	if SetupTypeNormal and !AppExistingInstallation {
+		Loop, 5
+			GuiControl, Show, % "label" . A_Index + 16
+	} else {
+		GuiControl, Show, % "label17"
+		GuiControl, Show, % "label18"
+		GuiControl, Show, % "label21"
+	}
 	GuiControl, Hide, buttonback
 	GuiControl, Text, buttonnext, % LANG_FINISH
 	GuiControl, -Disabled, buttonnext
@@ -185,6 +283,18 @@ Install:
 	GuiControl, +Disabled, buttoncancel
 Return
 
+Uninstall:
+	if ExistingInstallationType {
+		UninstallLocation := A_ScriptDir . "\" . CONST_SETUP_APPID . "\Uninstall.exe"
+	} else {
+		UninstallLocation := AppCurrentInstallDir . "\Uninstall.exe"
+	}
+	if !FileExist(UninstallLocation)
+		FileInstall, Uninstall.exe, % UninstallLocation
+	Run, % UninstallLocation
+	ExitApp
+Return
+
 log(message){
 	global
 	Gui, Submit, NoHide
@@ -194,6 +304,28 @@ log(message){
 	Return
 }
 
+MouseHover(wParam, lParam){
+	global hUninst, hUninstT, hNext, hNextT
+	static hover
+	MouseGetPos,,,, ctrl, 2
+	if ((ctrl == hUninst) or (ctrl == hUninstT)) {
+		if !hover
+		{
+			GuiControl, MoveDraw, label29, x35 y147
+			hover := 1
+		}
+	} else if ((ctrl == hNext) or (ctrl == hNextT)) {
+		if !hover
+		{
+			GuiControl, MoveDraw, label30, x35 y197
+			hover := 1
+		}
+	} else if hover {
+		GuiControl, Move, label29, x30 y147
+		GuiControl, Move, label30, x30 y197
+		hover := 0
+	}
+}
 
 
 
@@ -207,6 +339,7 @@ URL: http://www.autohotkey.com/forum/viewtopic.php?t=50448
 */
 
 RunAsAdmin() {
+	global
   Loop, %0%  ; For each parameter:
     {
       param := %A_Index%  ; Fetch the contents of the variable whose name is contained in A_Index.

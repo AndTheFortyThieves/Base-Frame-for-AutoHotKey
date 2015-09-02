@@ -36,3 +36,8 @@
 1.3		- added AppFileTypes, setup can now install new filetypes and modify existing filetypes while installing
 		- added AppUninstFiles, a file that holds a list of files that have to be removed by the uninstaller and can be extended by the installed app
 		- added AppUninstReg, a file that holds a list of registry keys that have to be removed by the uninstaller and can be extended by the installed app
+1.4		- added update function
+		- setup detects existing installations
+		- added portable installation (AppPortability)
+		- added custom initialization script (AppExtraInit)
+		- removed build.exe's "single mode"

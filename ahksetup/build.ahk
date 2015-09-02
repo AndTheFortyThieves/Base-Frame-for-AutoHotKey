@@ -50,11 +50,6 @@ Loop, 8
 		license := 1
 		continue
 	}
-	if(tmp == "-s")
-	{
-		single := 1
-		continue
-	}
 	if(tmp == "-d")
 	{
 		next_param := "destination"
@@ -121,6 +116,8 @@ IniRead, AppFileTypes, % source_dir . "\appinfo.ini", AppInfo, AppFileTypes, % A
 IniRead, AppIcon, % source_dir . "\appinfo.ini", AppInfo, AppIcon, %A_WorkingDir%\setupicon.ico
 IniRead, AppUninstFiles, % source_dir . "\appinfo.ini", AppInfo, AppUninstFiles, % A_Space
 IniRead, AppUninstReg, % source_dir . "\appinfo.ini", AppInfo, AppUninstReg, % A_Space
+IniRead, AppPortability, % source_dir . "\appinfo.ini", AppInfo, AppPortability, 0
+IniRead, AppExtraInit, % source_dir . "\appinfo.ini", AppInfo, AppExtraInit, 0
 AppInfoIncomplete := (!AppName or !AppVersion or !AppUpdateVersion or !AppAuthorName)
 if AppInfoIncomplete {
 	console_log("ERROR: Incomplete appinfo.ini!")
@@ -138,6 +135,12 @@ if AppUsesFileTypes {
 	}
 	IniRead, AppAssociatedFileTypes, % source_dir . "\" . AppFileTypes
 }
+if AppExtraInit {
+	if !FileExist(source_dir . "\" . AppExtraInit){
+		console_log("ERROR: Couldn't find " . source_dir . "\" . AppExtraInit)
+		gosub, Exit
+	}
+}
 	
 console_log("Application Info:`n")
 console_log("AppName=" . AppName . "`n")
@@ -152,6 +155,7 @@ else
 	AppAuthorEmail := BUILD_LANG_UNAIVAILABLE
 console_log("AppStdInstall=" . AppStdInstall . "`n")
 console_log("AppStartMenu=" . AppStartMenu . "`n")
+console_log("AppPortability=" . AppPortability . "`n")
 console_log("AppChangelogAvailable=" . AppChangelogAvailable . "`n")
 if AppChangelogAvailable
 	console_log("AppChangelog=" . AppChangelog . "`n")
@@ -226,31 +230,29 @@ instr_amount_counter := 0
 qm="
 FileDelete, instructions
 FileDelete, license.txt
-if(single) {
-	console_log("single mode`n")
-} else {
-	rel_pos := StrLen(source_dir) + 2
-	console_log("generating instructions from directory structure of " . source_dir . ":`n")
-	Loop, Files, %source_dir%\*.*, DR
-	{
-		rel_path := SubStr(A_LoopFileFullPath, rel_pos)
+rel_pos := StrLen(source_dir) + 2
+console_log("generating instructions from directory structure of " . source_dir . ":`n")
+Loop, Files, %source_dir%\*.*, DR
+{
+	rel_path := SubStr(A_LoopFileFullPath, rel_pos)
+	console_log(instr_amount_counter . ": " . rel_path . "`n")
+	instructions .= "log(label11 `. " . qm . "\" . rel_path  . qm . ")`nFileCreateDir`, `% label11 `. " . qm . "\" . rel_path  . qm . "`ninstr_count++`, progress := floor(100*(instr_count/instr_amount))`nGuiControl,, label14, `% progress`nGuiControl,, label15, `%progress`% ```%`n"
+	instr_amount_counter ++
+}
+console_log("generating instructions from files inside " . source_dir . ":`n")
+Loop, Files, %source_dir%\*.*, FR
+{
+	rel_path := SubStr(A_LoopFileFullPath, rel_pos)
+	if(rel_path == AppExtraInit)
+		continue
+	if(A_LoopFileSize){
 		console_log(instr_amount_counter . ": " . rel_path . "`n")
-		instructions .= "log(label11 `. " . qm . "\" . rel_path  . qm . ")`nFileCreateDir`, `% label11 `. " . qm . "\" . rel_path  . qm . "`ninstr_count++`, progress := floor(100*(instr_count/instr_amount))`nGuiControl,, label14, `% progress`nGuiControl,, label15, `%progress`% ```%`n"
-		instr_amount_counter ++
+		instructions .= "log(label11 `. " . qm . "\" . rel_path  . qm . ")`nFileInstall`," . auto_escape(rel_path) . "`, `% label11 `. " . qm . "\" . rel_path  . qm . ",1`ninstr_count++`, progress := floor(100*(instr_count/instr_amount))`nGuiControl,, label14, `% progress`nGuiControl,, label15, `%progress`% ```%`n"
+	} else {
+		console_log(instr_amount_counter . ": " . rel_path . " (empty!)`n")
+		instructions .= "log(label11 `. " . qm . "\" . rel_path  . qm . ")`nFileAppend`, `% " qm . qm . "`, `% label11 `. " . qm . "\" . rel_path  . qm . "`ninstr_count++`, progress := floor(100*(instr_count/instr_amount))`nGuiControl,, label14, `% progress`nGuiControl,, label15, `%progress`% ```%`n"
 	}
-	console_log("generating instructions from files inside " . source_dir . ":`n")
-	Loop, Files, %source_dir%\*.*, FR
-	{
-		rel_path := SubStr(A_LoopFileFullPath, rel_pos)
-		if(A_LoopFileSize){
-			console_log(instr_amount_counter . ": " . rel_path . "`n")
-			instructions .= "log(label11 `. " . qm . "\" . rel_path  . qm . ")`nFileInstall`," . auto_escape(rel_path) . "`, `% label11 `. " . qm . "\" . rel_path  . qm . ",1`ninstr_count++`, progress := floor(100*(instr_count/instr_amount))`nGuiControl,, label14, `% progress`nGuiControl,, label15, `%progress`% ```%`n"
-		} else {
-			console_log(instr_amount_counter . ": " . rel_path . " (empty!)`n")
-			instructions .= "log(label11 `. " . qm . "\" . rel_path  . qm . ")`nFileAppend`, `% " qm . qm . "`, `% label11 `. " . qm . "\" . rel_path  . qm . "`ninstr_count++`, progress := floor(100*(instr_count/instr_amount))`nGuiControl,, label14, `% progress`nGuiControl,, label15, `%progress`% ```%`n"
-		}
-		instr_amount_counter ++
-	}
+	instr_amount_counter ++
 }
 rel_path := "Uninstall.exe"
 console_log(instr_amount_counter . ": " . rel_path . " (obligatory)`n")
@@ -260,6 +262,7 @@ instr_amount_counter ++
 console_log("writing instruction file 2/2...`n")
 
 instr_amount_counter ++
+instructions .= "if (SetupTypeNormal) {`n"
 instructions .= "log(" . qm . "Registry..." . qm . ")`n"
 instructions .= "AppKey := " . qm . "SOFTWARE\" . AppID . qm . "`n"
 instructions .= "UninstallKey := " . qm . "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\" . AppID . qm . "`n"
@@ -327,7 +330,14 @@ if AppUsesFileTypes {
 		}
 	}
 }
-instructions .= "instr_count++`nprogress := floor(100*(instr_count/instr_amount))`nGuiControl,, label14, `% progress`nGuiControl,, label15, `%progress`% ```%`n"
+instructions .= "}`n"
+if AppExtraInit
+{
+	instructions .= "instr_count++`nprogress := 99`nGuiControl,, label14, `% progress`nGuiControl,, label15, `%progress`% ```%`n"
+	instructions .= "log(" . qm . "Completing..." . qm . ")`n"
+	instructions .= "#Include, " . AppExtraInit . "`n"
+}
+instructions .= "instr_count++`nprogress := 100`nGuiControl,, label14, `% progress`nGuiControl,, label15, `%progress`% ```%`n"
 instructions := "instr_count := 0`ninstr_amount := " instr_amount_counter . "`n" . instructions
 
 
@@ -347,11 +357,13 @@ FileAppend, CONST_SETUP_APPNAME := "%AppName%"`n, % template_file
 FileAppend, CONST_SETUP_APPID := "%AppID%"`n, % template_file
 FileAppend, CONST_SETUP_APPEXE := "%source_exe%"`n, % template_file
 FileAppend, CONST_SETUP_APPVERSION := "%AppVersion%"`n, % template_file
+FileAppend, CONST_SETUP_APPUPDATEVERSION := "%AppUpdateVersion%"`n, % template_file
 FileAppend, CONST_SETUP_STD_FOLDER := "%AppStdInstall%"`n, % template_file
 FileAppend, CONST_SETUP_APPSTARTMENU := "%AppStartMenu%"`n, % template_file
 FileAppend, CONST_SETUP_APPWEBSITE := "%AppWebsite%"`n, % template_file
 FileAppend, CONST_SETUP_APPAUTHORNAME := "%AppAuthorName%"`n, % template_file
 FileAppend, CONST_SETUP_APPWEBSITEAVAILABLE := %AppWebsiteAvailable%`n, % template_file
+FileAppend, CONST_SETUP_APPPORTABILITY := %AppPortability%`n, % template_file
 FileRead, template_content, setup_template.ahk
 FileAppend, % template_content, % template_file
 
