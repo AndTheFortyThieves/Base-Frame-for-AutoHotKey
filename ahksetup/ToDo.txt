@@ -25,3 +25,4 @@ x als Setup-Icon sollte man auch eine Exe angeben können							zurückgenommen, n
 - SingleMode entfernen																entfernt
 - Changelog bei Update anzeigen lassen												hinzugefügt (kann immer angezeigt werden, wenn vorhanden)
 - Keine Verknüpfungen bei portabler Installation									gefixt
+- Zielordner bei portabler Installation auswählbar									hinzugefügt

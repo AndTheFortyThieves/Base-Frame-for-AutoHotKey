@@ -54,7 +54,7 @@ Gui, Add, Text, x77 y6, % CONST_SETUP_TITLE . "`n" . LANG_INSTALLATION
 Gui, Add, Progress, cD4D0C8 x0 y57 h1 w500 +Border, 100
 Gui, Add, Progress, cF0F0F0 x0 y252 h1 w500 +Border, 100
 Gui, Font, s8 c888888, Segoe UI
-Gui, Add, Text, x5 y285 gAbout, ahksetup 2.0
+Gui, Add, Text, x5 y285 gAbout, ahksetup 2.1
 Gui, Font, s8 c000000, Segoe UI
 
 ;text + button initialization
@@ -186,10 +186,11 @@ if(MAIN_SITE = 2){
 	if (CONST_SETUP_APPCHANGELOGAVAILABLE) {
 		GuiControl, Show, buttonchangelog
 	}
-	if (SetupTypePortable and !AppExistingInstallation) {
-		GuiControl, Text, label7, % LANG_PTB_LICENSE_AGREE
-		GuiControl, Text, buttonnext, % LANG_INSTALL
-	} else if AppExistingInstallation {
+;!!	if (SetupTypePortable and !AppExistingInstallation) {
+;!!		GuiControl, Text, label7, % LANG_PTB_LICENSE_AGREE
+;!!		GuiControl, Text, buttonnext, % LANG_INSTALL
+;!!	} else if AppExistingInstallation {
+	if AppExistingInstallation {
 		GuiControl, Text, buttonnext, % LANG_INSTALL
 	} else {
 		GuiControl, Text, label7, % LANG_LICENSE_AGREE
@@ -203,9 +204,11 @@ if(MAIN_SITE = 3){
 	if SetupTypePortable
 	{
 		GuiControl, Text, label11, % A_WorkingDir . "\" . CONST_SETUP_APPID
-		FileCreateDir, % A_WorkingDir . "\" . CONST_SETUP_APPID
-		MAIN_SITE := 4
-	} else if AppExistingInstallation {
+;!!		FileCreateDir, % A_WorkingDir . "\" . CONST_SETUP_APPID
+	}
+;!!		MAIN_SITE := 4
+;!!	} else if AppExistingInstallation {
+	if AppExistingInstallation {
 		GuiControl, Text, label11, % AppCurrentInstallDir
 		MAIN_SITE := 4
 	} else {

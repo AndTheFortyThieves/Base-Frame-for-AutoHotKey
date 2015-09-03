@@ -45,3 +45,4 @@
 		- added file remove list for updates (AppUpdateRemove)
 		- added short documentation for 2.0, covering all features
 		- user can now review the app versions changelog if available
+2.1		- installation directory for portable installations can be changed
