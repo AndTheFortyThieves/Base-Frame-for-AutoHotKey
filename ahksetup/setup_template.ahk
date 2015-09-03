@@ -37,10 +37,12 @@ if AppExistingInstallation {
 	LANG_COMPLETED := LANG_UPD_COMPLETED
 	LANG_LICENSE_AGREE := LANG_UPD_LICENSE_AGREE
 	;check versions
-	if (ExistingInstallationType == 0)
+	if (ExistingInstallationType == 0) {
 		IniRead, AppCurrentUpdateVersion, % AppCurrentInstallDir . "\appinfo.ini", AppInfo, AppUpdateVersion
-	else
+	} else {
 		IniRead, AppCurrentUpdateVersion, % CONST_SETUP_APPID . "\appinfo.ini", AppInfo, AppUpdateVersion
+		AppCurrentInstallDir := A_WorkingDir . "\" . CONST_SETUP_APPID
+	}
 	if (AppCurrentUpdateversion = CONST_SETUP_APPUPDATEVERSION)
 		UpdateReinstall := 1
 	if (AppCurrentUpdateversion > CONST_SETUP_APPUPDATEVERSION)
@@ -310,7 +312,7 @@ Return
 log(message){
 	global
 	Gui, Submit, NoHide
-	GuiControl, Text, label16, % label16 . "`n" . message
+	GuiControl, Text, label16, % message . "`n" . label16 
 	StringReplace, rel_path, message, % label11, % "", 0
 	GuiControl, Text, label23, % rel_path
 	Return

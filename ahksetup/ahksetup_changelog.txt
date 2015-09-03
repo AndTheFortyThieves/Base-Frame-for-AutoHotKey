@@ -46,3 +46,6 @@
 		- added short documentation for 2.0, covering all features
 		- user can now review the app versions changelog if available
 2.1		- installation directory for portable installations can be changed
+		- changed setup log orientation (now upwards)
+		- fixed update AppCurrentInstallDir-bug for portable installations
+		- added "Run setup as update" to documentation
