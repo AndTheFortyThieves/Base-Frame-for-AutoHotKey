@@ -38,6 +38,7 @@ LANG_UPD_WELCOME_TEXT := "This wizard will guide you through the update of:"
 LANG_UPD_RECOMMENDATION := "It is recommended, that you close all other applications before starting the update. This will make it possible to update relevant system files without having to reboot your computer.`n`nClick Next to continue."
 LANG_UPD_REVERT := "revert to"
 LANG_UPD_REINSTALL := "reinstall"
+LANG_CHANGELOG := "Changelog"
 ;SECTION END
 LANG_UNINSTALL := "Uninstall"
 LANG_DOUNINSTALL := "Uninstall"

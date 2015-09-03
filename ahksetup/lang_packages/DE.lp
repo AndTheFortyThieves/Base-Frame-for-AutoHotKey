@@ -40,6 +40,7 @@ LANG_UPD_INSTALL := "Update"
 LANG_UPD_COMPLETED := "Update vervollständigen"
 LANG_UPD_REVERT := "Rücksetzen auf"
 LANG_UPD_REINSTALL := "Neuinstallation"
+LANG_CHANGELOG := "Changelog"
 ;SECTION END
 LANG_UNINSTALL := "Deinstallation"
 LANG_DOUNINSTALL := "Deinstallieren"

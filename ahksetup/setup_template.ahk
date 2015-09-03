@@ -14,6 +14,7 @@ MAIN_INSTALLATION_FINISHED := 0
 MAIN_SITE := 0
 
 FileInstall, ../license.txt, %A_Temp%/license.txt, 1
+FileInstall, ../changelog.txt, %A_Temp%/changelog.txt, 1
 FileInstall, ../res/buttonbg.png, %A_Temp%/buttonbg.png, 1
 FileRead, CONST_LICENSE_TEXT, %A_Temp%/license.txt
 
@@ -22,10 +23,7 @@ RegRead, AppCurrentInstallDir, HKEY_LOCAL_MACHINE\SOFTWARE\%CONST_SETUP_APPID%, 
 AppExistingInstallation := !ErrorLevel
 ExistingInstallationType := 0
 if (!AppExistingInstallation && CONST_SETUP_APPPORTABILITY > 0) {
-	if FileExist(CONST_SETUP_APPID . "\appinfo.ini") {
-		IniRead, tmp, % CONST_SETUP_APPID . "\appinfo.ini", AppInfo, AppID
-		AppExistingInstallation := (tmp == CONST_SETUP_APPID)
-	}
+	AppExistingInstallation := FileExist(CONST_SETUP_APPID . "\appinfo.ini")
 	ExistingInstallationType := 1
 }
 if AppExistingInstallation {
@@ -55,15 +53,16 @@ Gui, Font, s14, Arial
 Gui, Add, Text, x77 y6, % CONST_SETUP_TITLE . "`n" . LANG_INSTALLATION
 Gui, Add, Progress, cD4D0C8 x0 y57 h1 w500 +Border, 100
 Gui, Add, Progress, cF0F0F0 x0 y252 h1 w500 +Border, 100
-Gui, Font, s10 c888888, Segoe UI
-Gui, Add, Text, x5 y282 gAbout, ahksetup 1.4
+Gui, Font, s8 c888888, Segoe UI
+Gui, Add, Text, x5 y285 gAbout, ahksetup 2.0
 Gui, Font, s8 c000000, Segoe UI
 
 ;text + button initialization
-Gui, Add, Button, gBack vbuttonback x251 y265 h22 w75, % "< " . LANG_BACK
-Gui, Add, Button, gNext vbuttonnext x326 y265 h22 w75, % LANG_NEXT . " >"
-Gui, Add, Button, gGuiClose vbuttoncancel x413 y265 h22 w73, % LANG_CANCEL
-Gui, Add, Button, gShowLicense vbuttonlicense x146 y265 h22 w93, % LANG_LICENSE_FULL
+Gui, Add, Button, gBack vbuttonback x251 y260 h22 w75, % "< " . LANG_BACK
+Gui, Add, Button, gNext vbuttonnext x326 y260 h22 w75, % LANG_NEXT . " >"
+Gui, Add, Button, gGuiClose vbuttoncancel x413 y260 h22 w73, % LANG_CANCEL
+Gui, Add, Button, gShowLicense vbuttonlicense x146 y260 h22 w93, % LANG_LICENSE_FULL
+Gui, Add, Button, gShowChangelog vbuttonchangelog x46 y260 h22 w93, % LANG_CHANGELOG
 
 Gui, Font, s9 c000000 bold, Segoe UI
 Gui, Add, Text, vlabel1 x10 y65, % LANG_WELCOME
@@ -164,6 +163,7 @@ if(MAIN_SITE = 0){
 		GuiControl, Show, % "label" . A_Index + 24
 	GuiControl, Hide, buttonback
 	GuiControl, Hide, buttonlicense
+	GuiControl, Hide, buttonchangelog
 	GuiControl, Hide, buttonnext
 }
 if(MAIN_SITE = 1){
@@ -176,12 +176,16 @@ if(MAIN_SITE = 1){
 	GuiControl, Show, buttonnext
 	GuiControl, Hide, buttonback
 	GuiControl, Hide, buttonlicense
+	GuiControl, Hide, buttonchangelog
 }
 if(MAIN_SITE = 2){
 	Loop, 4
 		GuiControl, Show, % "label" . A_Index + 3
 	GuiControl, Show, buttonback
 	GuiControl, Show, buttonlicense
+	if (CONST_SETUP_APPCHANGELOGAVAILABLE) {
+		GuiControl, Show, buttonchangelog
+	}
 	if (SetupTypePortable and !AppExistingInstallation) {
 		GuiControl, Text, label7, % LANG_PTB_LICENSE_AGREE
 		GuiControl, Text, buttonnext, % LANG_INSTALL
@@ -195,6 +199,7 @@ if(MAIN_SITE = 2){
 }
 if(MAIN_SITE = 3){
 	GuiControl, Hide, buttonlicense
+	GuiControl, Hide, buttonchangelog
 	if SetupTypePortable
 	{
 		GuiControl, Text, label11, % A_WorkingDir . "\" . CONST_SETUP_APPID
@@ -239,9 +244,9 @@ if(MAIN_SITE = 6){
 	;19 - Desktop
 	;20 - Start Menu
 	;21 - Run
-	if(label19)
+	if(label19 and !(AppExistingInstallation or SetupTypePortable))
 		FileCreateShortcut, %label11%\%CONST_SETUP_APPEXE%, %A_Desktop%\%CONST_SETUP_APPNAME%.lnk, %label11%, % "", % CONST_SETUP_APPNAME . " " . CONST_SETUP_APPVERSION
-	if(label20)
+	if(label20 and !(AppExistingInstallation or SetupTypePortable))
 	{
 		FileCreateDir, %A_ProgramsCommon%\%CONST_SETUP_APPSTARTMENU%
 		FileCreateShortcut, %label11%\%CONST_SETUP_APPEXE%, %A_ProgramsCommon%\%CONST_SETUP_APPSTARTMENU%\%CONST_SETUP_APPNAME%.lnk, %label11%, % "", % CONST_SETUP_APPNAME . " " . CONST_SETUP_APPVERSION
@@ -263,6 +268,10 @@ Return
 
 ShowLicense:
 	Run, %A_Temp%/license.txt
+Return
+
+ShowChangelog:
+	Run, %A_Temp%/changelog.txt
 Return
 
 ChooseFolder:

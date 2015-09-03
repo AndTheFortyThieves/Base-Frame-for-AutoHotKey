@@ -5,6 +5,7 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 FileInstall, gnu_gpl_EN.txt, % A_Temp . "\gnu_gpl_EN.txt", 1
 FileInstall, gnu_gpl_DE.txt, % A_Temp . "\gnu_gpl_DE.txt", 1
 
+
 If(!DllCall("AttachConsole", "int", -1)){
 	ExitApp
 }
@@ -117,7 +118,8 @@ IniRead, AppIcon, % source_dir . "\appinfo.ini", AppInfo, AppIcon, %A_WorkingDir
 IniRead, AppUninstFiles, % source_dir . "\appinfo.ini", AppInfo, AppUninstFiles, % A_Space
 IniRead, AppUninstReg, % source_dir . "\appinfo.ini", AppInfo, AppUninstReg, % A_Space
 IniRead, AppPortability, % source_dir . "\appinfo.ini", AppInfo, AppPortability, 0
-IniRead, AppExtraInit, % source_dir . "\appinfo.ini", AppInfo, AppExtraInit, 0
+IniRead, AppExtraInit, % source_dir . "\appinfo.ini", AppInfo, AppExtraInit, % A_Space
+IniRead, AppUpdateRemove, % source_dir . "\appinfo.ini", AppInfo, AppUpdateRemove, % A_Space
 AppInfoIncomplete := (!AppName or !AppVersion or !AppUpdateVersion or !AppAuthorName)
 if AppInfoIncomplete {
 	console_log("ERROR: Incomplete appinfo.ini!")
@@ -138,6 +140,12 @@ if AppUsesFileTypes {
 if AppExtraInit {
 	if !FileExist(source_dir . "\" . AppExtraInit){
 		console_log("ERROR: Couldn't find " . source_dir . "\" . AppExtraInit)
+		gosub, Exit
+	}
+}
+if AppChangelogAvailable {
+	if !FileExist(source_dir . "\" . AppChangelog){
+		console_log("ERROR: Couldn't find " . source_dir . "\" . AppChangelog)
 		gosub, Exit
 	}
 }
@@ -230,7 +238,21 @@ instr_amount_counter := 0
 qm="
 FileDelete, instructions
 FileDelete, license.txt
+FileDelete, changelog.txt
 rel_pos := StrLen(source_dir) + 2
+instructions .= "log(" . qm . "Preparing..."  . qm . ")`n"
+if AppUpdateRemove {
+	console_log("generating update file-removing instructions`n")
+	Loop, Read, % "build\" . AppUpdateRemove
+	{
+		type := SubStr(A_LoopReadLine, 1, 1)
+		path := SubStr(A_LoopReadLine, 3)
+		if (type == "F")
+			instructions .= "FileDelete`, `%label11`%\" . path . "`n"
+		if (type == "D")
+			instructions .= "FileRemoveDir`, `%label11`%\" . path . "`, 1`n"
+	}
+}
 console_log("generating instructions from directory structure of " . source_dir . ":`n")
 Loop, Files, %source_dir%\*.*, DR
 {
@@ -243,7 +265,7 @@ console_log("generating instructions from files inside " . source_dir . ":`n")
 Loop, Files, %source_dir%\*.*, FR
 {
 	rel_path := SubStr(A_LoopFileFullPath, rel_pos)
-	if(rel_path == AppExtraInit)
+	if((rel_path == AppExtraInit) or (rel_path == AppUpdateRemove))
 		continue
 	if(A_LoopFileSize){
 		console_log(instr_amount_counter . ": " . rel_path . "`n")
@@ -363,6 +385,7 @@ FileAppend, CONST_SETUP_APPSTARTMENU := "%AppStartMenu%"`n, % template_file
 FileAppend, CONST_SETUP_APPWEBSITE := "%AppWebsite%"`n, % template_file
 FileAppend, CONST_SETUP_APPAUTHORNAME := "%AppAuthorName%"`n, % template_file
 FileAppend, CONST_SETUP_APPWEBSITEAVAILABLE := %AppWebsiteAvailable%`n, % template_file
+FileAppend, CONST_SETUP_APPCHANGELOGAVAILABLE := %AppChangelogAvailable%`n, % template_file
 FileAppend, CONST_SETUP_APPPORTABILITY := %AppPortability%`n, % template_file
 FileRead, template_content, setup_template.ahk
 FileAppend, % template_content, % template_file
@@ -376,6 +399,12 @@ Loop, Parse, keywords, |
 StringReplace, license_content, license_content, % "%" . A_LoopField . "%", % %A_LoopField%, 1
 FileAppend, % license_content, license.txt
 
+console_log("changelog to file...`n")
+if AppChangelogAvailable
+	FileRead, changelog_content, build\%AppChangelog%
+else
+	changelog_content := "none"
+FileAppend, % changelog_content, changelog.txt
 
 console_log("adding uninstaller:`n")
 console_log("generating Uninstall.exe from template...`n")
@@ -423,6 +452,7 @@ Exit:
 console_log("`nremoving temporary files...")
 FileDelete, instructions
 FileDelete, license.txt
+FileDelete, changelog.txt
 FileRemoveDir, build, 1
 console_log("`n---`nbuild.exe is terminated`n")
 ExitApp
