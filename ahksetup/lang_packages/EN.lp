@@ -39,6 +39,10 @@ LANG_UPD_RECOMMENDATION := "It is recommended, that you close all other applicat
 LANG_UPD_REVERT := "revert to"
 LANG_UPD_REINSTALL := "reinstall"
 LANG_CHANGELOG := "Changelog"
+LANG_CLOSE_PROCESS := "Setup can't start while application processes are running.`nThe following processes must be closed:"
+LANG_CLOSE_PROCESS_CONFIRM := "Click Yes to close processes or No to exit."
+LANG_PROCESS_PROBLEM := "Setup wasn't able to kill all processes.`nPlease close the following processes manually:"
+LANG_PROCESS_PROBLEM_CONFIRM := "Click Retry to restart setup or Cancel to exit."
 ;SECTION END
 LANG_UNINSTALL := "Uninstall"
 LANG_DOUNINSTALL := "Uninstall"

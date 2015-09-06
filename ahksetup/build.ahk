@@ -258,7 +258,7 @@ Loop, Files, %source_dir%\*.*, DR
 {
 	rel_path := SubStr(A_LoopFileFullPath, rel_pos)
 	console_log(instr_amount_counter . ": " . rel_path . "`n")
-	instructions .= "log(label11 `. " . qm . "\" . rel_path  . qm . ")`nFileCreateDir`, `% label11 `. " . qm . "\" . rel_path  . qm . "`ninstr_count++`, progress := floor(100*(instr_count/instr_amount))`nGuiControl,, label14, `% progress`nGuiControl,, label15, `%progress`% ```%`n"
+	instructions .= "log(label11 `. " . qm . "\" . rel_path  . qm . ")`nFileCreateDir`, `% label11 `. " . qm . "\" . rel_path  . qm . "`ninstr_count++`, progress := floor(100*(instr_count/instr_amount))`nprog(progress)`nGuiControl,, label15, `%progress`% ```%`n"
 	instr_amount_counter ++
 }
 console_log("generating instructions from files inside " . source_dir . ":`n")
@@ -269,16 +269,16 @@ Loop, Files, %source_dir%\*.*, FR
 		continue
 	if(A_LoopFileSize){
 		console_log(instr_amount_counter . ": " . rel_path . "`n")
-		instructions .= "log(label11 `. " . qm . "\" . rel_path  . qm . ")`nFileInstall`," . auto_escape(rel_path) . "`, `% label11 `. " . qm . "\" . rel_path  . qm . ",1`ninstr_count++`, progress := floor(100*(instr_count/instr_amount))`nGuiControl,, label14, `% progress`nGuiControl,, label15, `%progress`% ```%`n"
+		instructions .= "log(label11 `. " . qm . "\" . rel_path  . qm . ")`nFileInstall`," . auto_escape(rel_path) . "`, `% label11 `. " . qm . "\" . rel_path  . qm . ",1`ninstr_count++`, progress := floor(100*(instr_count/instr_amount))`nprog(progress)`nGuiControl,, label15, `%progress`% ```%`n"
 	} else {
 		console_log(instr_amount_counter . ": " . rel_path . " (empty!)`n")
-		instructions .= "log(label11 `. " . qm . "\" . rel_path  . qm . ")`nFileAppend`, `% " qm . qm . "`, `% label11 `. " . qm . "\" . rel_path  . qm . "`ninstr_count++`, progress := floor(100*(instr_count/instr_amount))`nGuiControl,, label14, `% progress`nGuiControl,, label15, `%progress`% ```%`n"
+		instructions .= "log(label11 `. " . qm . "\" . rel_path  . qm . ")`nFileAppend`, `% " qm . qm . "`, `% label11 `. " . qm . "\" . rel_path  . qm . "`ninstr_count++`, progress := floor(100*(instr_count/instr_amount))`nprog(progress)`nGuiControl,, label15, `%progress`% ```%`n"
 	}
 	instr_amount_counter ++
 }
 rel_path := "Uninstall.exe"
 console_log(instr_amount_counter . ": " . rel_path . " (obligatory)`n")
-instructions .= "log(label11 `. " . qm . "\" . rel_path  . qm . ")`nFileInstall`," . rel_path . "`, `% label11 `. " . qm . "\" . rel_path  . qm . ",1`ninstr_count++`, progress := floor(100*(instr_count/instr_amount))`nGuiControl,, label14, `% progress`nGuiControl,, label15, `%progress`% ```%`n"
+instructions .= "log(label11 `. " . qm . "\" . rel_path  . qm . ")`nFileInstall`," . rel_path . "`, `% label11 `. " . qm . "\" . rel_path  . qm . ",1`ninstr_count++`, progress := floor(100*(instr_count/instr_amount))`nprog(progress)`nGuiControl,, label15, `%progress`% ```%`n"
 instr_amount_counter ++
 
 console_log("writing instruction file 2/2...`n")
@@ -355,11 +355,11 @@ if AppUsesFileTypes {
 instructions .= "}`n"
 if AppExtraInit
 {
-	instructions .= "instr_count++`nprogress := 99`nGuiControl,, label14, `% progress`nGuiControl,, label15, `%progress`% ```%`n"
+	instructions .= "instr_count++`nprogress := 99`nprog(progress)`nGuiControl,, label15, `%progress`% ```%`n"
 	instructions .= "log(" . qm . "Completing..." . qm . ")`n"
 	instructions .= "#Include, " . AppExtraInit . "`n"
 }
-instructions .= "instr_count++`nprogress := 100`nGuiControl,, label14, `% progress`nGuiControl,, label15, `%progress`% ```%`n"
+instructions .= "instr_count++`nprogress := 100`nprog(progress)`nGuiControl,, label15, `%progress`% ```%`n"
 instructions := "instr_count := 0`ninstr_amount := " instr_amount_counter . "`n" . instructions
 
 

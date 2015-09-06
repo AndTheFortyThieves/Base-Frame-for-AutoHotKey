@@ -9,6 +9,25 @@ SetWorkingDir %A_ScriptDir%
 MAIN_INSTALLATION_FINISHED := 0
 MAIN_SITE := 0
 
+AppCurrentInstallDir := CONST_SETUP_INSTALLDIR
+if (process_list := isAppRunning(AppCurrentInstallDir)) {
+	MsgBox, % 0x2034, % CONST_SETUP_APPNAME . " " . LANG_SETUP, % LANG_CLOSE_PROCESS . "`n`n" . process_list . "`n" . LANG_CLOSE_PROCESS_CONFIRM
+	IfMsgBox, No
+		ExitApp
+	taskkill_cmd := "TASKKILL /T /F"
+	Loop, Parse, process_list, `n
+	{
+		RegExMatch(A_LoopField, ".*\((\d+)\)", process_pid)
+		taskkill_cmd .= (process_pid ? " /PID " . process_pid1 : "")
+	}
+	RunWait, % taskkill_cmd,, Hide
+	while(process_list := isAppRunning(AppCurrentInstallDir)) {
+		MsgBox, % 0x2035, % CONST_SETUP_APPNAME . " " . LANG_SETUP, % LANG_PROCESS_PROBLEM . "`n`n" . process_list . "`n" . LANG_PROCESS_PROBLEM_CONFIRM
+		IfMsgBox, Cancel
+			ExitApp
+	}
+}
+
 Gui, Color, FFFFFF
 Gui, Add, Pic, x6 y6 w47 h47 Icon1, %A_ScriptFullPath%
 Gui, Font, s14, Arial
@@ -114,9 +133,22 @@ Uninstall:
 	UninstallKey := "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\" . CONST_SETUP_APPID
 	AppPathKey := "SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\" . CONST_SETUP_APPEXE
 	SetRegView % (A_Is64bitOS ? 64 : 32)
-	RegDelete, HKLM, % AppKey
-	RegDelete, HKLM, % UninstallKey
-	RegDelete, HKLM, % AppPathKey
+	Loop
+	{
+		RegDelete, HKLM, % AppKey
+		RegDelete, HKLM, % UninstallKey
+		RegDelete, HKLM, % AppPathKey
+		RegRead, null, HKLM, % AppKey
+		if (!Errorlevel) {
+			MsgBox, 22, Error, Unable to remove application registry keys!
+			IfMsgBox, Cancel
+				Suicide()
+			IfMsgBox, TryAgain
+				continue
+		}
+		break
+	}
+		
 	
 	Gui, Font, c00CC00 normal
 	GuiControl, Font, label5
@@ -162,7 +194,18 @@ Uninstall:
 		}
 	}
 	
-	FileRemoveDir, % CONST_SETUP_INSTALLDIR, 1
+	Loop 
+	{
+		FileRemoveDir, % CONST_SETUP_INSTALLDIR, 1
+		if (FileExist(CONST_SETUP_INSTALLDIR)) {
+			MsgBox, 22, Error, Unable to remove the installation directory!
+			IfMsgBox, Cancel
+				Suicide()
+			IfMsgBox, TryAgain
+				continue
+		}
+		break
+	}
 	
 	Gui, Font, c00CC00 normal
 	GuiControl, Font, label7
@@ -195,6 +238,16 @@ Suicide() {
 	), remove.cmd
 	Run, remove.cmd,, hide
 	ExitApp
+}
+
+isAppRunning(AppPath) {
+	list := ""
+	for process in ComObjGet("winmgmts:").ExecQuery("Select * from Win32_Process")
+	{
+		if (path := process.ExecutablePath) && InStr(path, AppPath)
+			list .= process.Name . " (" . process.ProcessId . ")`n"
+	}
+	return (list ? list : "")
 }
 
 /*

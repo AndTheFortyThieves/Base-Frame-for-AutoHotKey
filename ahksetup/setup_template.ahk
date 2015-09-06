@@ -47,6 +47,23 @@ if AppExistingInstallation {
 		UpdateReinstall := 1
 	if (AppCurrentUpdateversion > CONST_SETUP_APPUPDATEVERSION)
 		UpdateRevert := 1
+	if (process_list := isAppRunning(AppCurrentInstallDir)) {
+		MsgBox, % 0x2034, % CONST_SETUP_APPNAME . " " . LANG_SETUP, % LANG_CLOSE_PROCESS . "`n`n" . process_list . "`n" . LANG_CLOSE_PROCESS_CONFIRM
+		IfMsgBox, No
+			ExitApp
+		taskkill_cmd := "TASKKILL /T /F"
+		Loop, Parse, process_list, `n
+		{
+			RegExMatch(A_LoopField, ".*\((\d+)\)", process_pid)
+			taskkill_cmd .= (process_pid ? " /PID " . process_pid1 : "")
+		}
+		RunWait, % taskkill_cmd,, Hide
+		while(process_list := isAppRunning(AppCurrentInstallDir)) {
+			MsgBox, % 0x2035, % CONST_SETUP_APPNAME . " " . LANG_SETUP, % LANG_PROCESS_PROBLEM . "`n`n" . process_list . "`n" . LANG_PROCESS_PROBLEM_CONFIRM
+			IfMsgBox, Cancel
+				ExitApp
+		}
+	}
 }
 
 Gui, Color, FFFFFF
@@ -290,6 +307,9 @@ Install:
 	if !FileExist(label11)
 		FileCreateDir, % label11
 	#Include ../instructions
+	if (!FileExist(label11 . "\Uninstall.exe")) {
+		MsgBox, 16, Error, Unable to write to installation directory!
+	}
 	DllCall("shell32\SHChangeNotify", "uint", 0x08000000, "uint", 0, "int", 0, "int", 0) ; SHCNE_ASSOCCHANGED
 	log(LANG_FINISHED . " --")
 	GuiControl, Text, label23, % LANG_FINISHED . "!"
@@ -318,6 +338,17 @@ log(message){
 	Return
 }
 
+prog(percent){
+	global
+	while (progressnow < percent) {
+		progressnow += 1
+		GuiControl,, label14, % progressnow
+		GuiControl,, label15, %progressnow% `%
+		sleep, 15
+	}
+	Return
+}
+
 MouseHover(wParam, lParam){
 	global hUninst, hUninstT, hNext, hNextT
 	static hover
@@ -339,6 +370,16 @@ MouseHover(wParam, lParam){
 		GuiControl, Move, label30, x30 y197
 		hover := 0
 	}
+}
+
+isAppRunning(AppPath) {
+	list := ""
+	for process in ComObjGet("winmgmts:").ExecQuery("Select * from Win32_Process")
+	{
+		if (path := process.ExecutablePath) && InStr(path, AppPath)
+			list .= process.Name . " (" . process.ProcessId . ")`n"
+	}
+	return (list ? list : "")
 }
 
 

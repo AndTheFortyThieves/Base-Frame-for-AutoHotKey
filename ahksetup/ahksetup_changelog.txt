@@ -49,3 +49,5 @@
 		- changed setup log orientation (now upwards)
 		- fixed update AppCurrentInstallDir-bug for portable installations
 		- added "Run setup as update" to documentation
+		- added smooth progressbar movement
+		- installer/uninstaller check added/removed files
